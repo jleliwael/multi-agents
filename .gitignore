@@ -9,8 +9,20 @@ __pycache__/
 *$py.class
 *.so
 
-# Configuration et secrets
+# Configuration et secrets (seul .env.example est publié)
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Tests et outils
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+*.log
 
 # Données locales (Bases de données et vecteurs)
 data/
