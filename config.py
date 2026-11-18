@@ -33,6 +33,14 @@ class Settings:
     max_tool_calls: int = int(os.getenv("MAX_TOOL_CALLS", "5"))
     max_revisions: int = int(os.getenv("MAX_REVISIONS", "2"))
 
+    # Recherche Web externe (SearXNG local ou API optionnelle)
+    searxng_url: str = os.getenv("SEARXNG_URL", "http://localhost:8080")
+    tavily_api_key: str = os.getenv("TAVILY_API_KEY", "")
+    brave_api_key: str = os.getenv("BRAVE_API_KEY", "")
+
+    # Sécurité et Approbation Humaine (Human-in-the-Loop)
+    require_human_approval: bool = os.getenv("REQUIRE_HUMAN_APPROVAL", "false").lower() in ("true", "1", "yes")
+
     # Chemins de stockage local (relatifs à la racine du projet)
     sqlite_db_path: Path = BASE_DIR / os.getenv("SQLITE_DB_PATH", "data/app.db")
     chroma_persist_dir: Path = BASE_DIR / os.getenv("CHROMA_PERSIST_DIR", "data/chroma")

@@ -1,3 +1,30 @@
-# Configuration optionnelle pour exécuter l'infrastructure locale (ex: Ollama, ChromaDB distant ou PostgreSQL)
-version: "3.8"
-services: {}
+# Configuration Docker Compose pour SearXNG en local (Moteur de recherche méta privé)
+# Pour démarrer sous Windows (avec Docker Desktop) :
+#   docker-compose up -d
+# L'interface et l'API JSON seront alors disponibles sur : http://localhost:8080
+
+version: '3.8'
+
+services:
+  searxng:
+    container_name: searxng-local
+    image: searxng/searxng:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8080/
+      - BIND_ADDRESS=0.0.0.0:8080
+    volumes:
+      - ./data/searxng:/etc/searxng:rw
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
