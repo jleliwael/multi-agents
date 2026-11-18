@@ -13,6 +13,7 @@ from pathlib import Path
 
 from config import settings
 from orchestrator.plan_models import Plan, Step, StepResult, Fact
+from orchestrator.limits import TaskLimits, LimitExceeded
 from agents.planner import PlannerAgent
 from orchestrator.runner import PlanRunner, topological_sort_steps
 from memory.short_term import ShortTermMemory
@@ -138,6 +139,9 @@ class Orchestrator:
         start_time = time.time()
         created_at = datetime.now(timezone.utc).isoformat()
 
+        # Initialisation du contrôleur de limites pour cette tâche
+        limits = TaskLimits()
+
         def notify(msg: str) -> None:
             if on_progress:
                 on_progress(msg)
@@ -178,6 +182,22 @@ class Orchestrator:
 
         for idx, step in enumerate(ordered_steps, start=1):
             notify(f"Étape {idx}/{total_steps} : Exécution par l'agent '{step.agent.upper()}'...")
+
+            # Vérification des limites avant chaque étape
+            limits.steps_done = idx - 1
+            try:
+                limits.check(action=f"etape_{step.id}_{step.agent}")
+            except LimitExceeded as exc:
+                notify(f"⚠️ Limite atteinte : {exc.reason} — Génération du rapport partiel...")
+                return self._generate_partial_result(
+                    tid=tid,
+                    objective=objective,
+                    plan=plan,
+                    memory=memory,
+                    reason=exc.reason,
+                    start_time=start_time,
+                    created_at=created_at
+                )
 
             # Traitement spécifique de l'étape de rédaction avec le Critic et révisions
             if step.agent.lower().strip() == "writer":
@@ -346,3 +366,78 @@ class Orchestrator:
         memory.add_step_result(step_result)
 
         return current_report, report_file
+
+    def _generate_partial_result(
+        self,
+        tid: str,
+        objective: str,
+        plan: Plan,
+        memory: ShortTermMemory,
+        reason: str,
+        start_time: float,
+        created_at: str
+    ) -> Dict[str, Any]:
+        """Génère un rapport partiel horodaté quand une limite d'exécution est atteinte."""
+        from datetime import datetime
+
+        total_duration_ms = (time.time() - start_time) * 1000
+        partial_header = (
+            f"# ⚠️ RAPPORT INCOMPLET — LIMITE ATTEINTE\n\n"
+            f"> **Raison :** {reason}\n\n"
+            f"Les données collectées jusqu'à cet arrêt sont présentées ci-dessous.\n\n"
+        )
+
+        # Rapport partiel basé sur les faits disponibles en mémoire
+        facts = memory.get_facts()
+        partial_body = ""
+        if facts:
+            partial_body += "## Faits collectés avant l'arrêt\n\n"
+            for i, f in enumerate(facts, 1):
+                partial_body += f"- [{i}] {f.claim} *(Source : {f.source_name})*\n"
+        else:
+            partial_body += "Aucun fait n'avait encore été collecté au moment de l'arrêt.\n"
+
+        partial_report = partial_header + partial_body
+
+        # Sauvegarde du rapport partiel
+        date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        report_dir = settings.reports_dir
+        report_dir.mkdir(parents=True, exist_ok=True)
+        report_file = report_dir / f"{date_str}_{tid}_INCOMPLET.md"
+        report_file.write_text(partial_report, encoding="utf-8")
+
+        # Enregistrement en base SQLite avec statut INCOMPLET
+        task_record = TaskRecord(
+            task_id=tid,
+            objective=objective,
+            family=plan.task_type or "synthese",
+            plan_json=plan.model_dump_json(),
+            status="INCOMPLET",
+            duration_ms=round(total_duration_ms, 2),
+            sources_count=len(facts),
+            report_path=str(report_file),
+            created_at=created_at
+        )
+        self.repository.save_task(task_record)
+
+        journal.log_event(
+            task_id=tid,
+            agent="orchestrator",
+            action="limit_exceeded_partial_report",
+            duration_ms=total_duration_ms,
+            error=reason,
+            result={"status": "INCOMPLET", "facts_count": len(facts), "report_path": str(report_file)}
+        )
+
+        return {
+            "task_id": tid,
+            "objective": objective,
+            "status": "INCOMPLET",
+            "family": plan.task_type,
+            "plan": plan.model_dump(),
+            "report_path": str(report_file),
+            "final_output": partial_report,
+            "facts": [f.model_dump() for f in facts],
+            "duration_ms": round(total_duration_ms, 2),
+            "limit_reason": reason,
+        }

@@ -11,6 +11,10 @@ import json
 from config import settings
 from llm.ollama_llm import OllamaLLM, OllamaResponse
 from tools.registry import registry, ToolRegistry
+from security.sanitizer import sanitize_external_content
+
+# Outils dont le résultat est du contenu externe non fiable → désinfection obligatoire
+_EXTERNAL_DATA_TOOLS: set[str] = {"web_search", "fetch_page", "read_document_pages"}
 
 
 class Agent:
@@ -93,6 +97,13 @@ class Agent:
                     tool_output = f"Erreur de sécurité : L'agent '{self.name}' n'a pas l'autorisation d'utiliser l'outil '{tool_name}'."
                 else:
                     tool_output = self.registry.execute(tool_name, tool_args)
+
+                # Désinfection du contenu externe (anti-injection de prompt)
+                if tool_name in _EXTERNAL_DATA_TOOLS:
+                    tool_output = sanitize_external_content(
+                        str(tool_output),
+                        source=str(tool_args.get("filepath", tool_args.get("url", tool_args.get("query", tool_name))))
+                    )
 
                 # Renvoi du résultat de l'outil au modèle
                 messages.append({

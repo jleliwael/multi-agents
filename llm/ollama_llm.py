@@ -2,14 +2,21 @@
 
 Gère l'inférence conversationnelle (/api/chat) avec prise en charge
 robuste du format d'appel d'outils (Tool Calling natif ou détecté dans le flux).
+Inclut un mécanisme de relance automatique à délai croissant (backoff exponentiel)
+pour faire face aux surcharges temporaires d'Ollama ou aux erreurs réseau.
 """
 
 from typing import List, Dict, Any, Optional
 import json
 import re
+import time
 import urllib.request
 import urllib.error
 from config import settings
+
+
+# Délais de relance en secondes : 1re relance → 2s, 2e → 4s, 3e → 8s
+RETRY_DELAYS_SECONDS: List[float] = [2.0, 4.0, 8.0]
 
 
 class OllamaResponse:
@@ -73,7 +80,11 @@ class OllamaLLM:
         tools: Optional[List[Dict[str, Any]]] = None,
         temperature: float = 0.2
     ) -> OllamaResponse:
-        """Envoie une requête de chat avec outils optionnels et retourne la réponse typée."""
+        """Envoie une requête de chat avec outils optionnels et retourne la réponse typée.
+
+        Relance automatiquement jusqu'à 3 fois en cas d'erreur transitoire,
+        avec un délai doublant à chaque tentative (2s, 4s, 8s).
+        """
         payload: Dict[str, Any] = {
             "model": self.model,
             "messages": messages,
@@ -87,21 +98,54 @@ class OllamaLLM:
             payload["tools"] = tools
 
         data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            self.chat_url,
-            data=data,
-            headers={"Content-Type": "application/json"}
-        )
+        last_error: Exception = RuntimeError("Aucune tentative effectuée.")
 
-        try:
-            with urllib.request.urlopen(req, timeout=300) as response:
-                resp_json = json.loads(response.read().decode("utf-8"))
-                return OllamaResponse(
-                    message=resp_json.get("message", {}),
-                    raw_data=resp_json
+        # Tentative initiale + relances avec backoff exponentiel
+        for attempt, delay in enumerate([0.0] + RETRY_DELAYS_SECONDS):
+            if delay > 0:
+                print(f"[OllamaLLM] Relance #{attempt} dans {delay}s après erreur : {last_error}")
+                time.sleep(delay)
+
+            try:
+                req = urllib.request.Request(
+                    self.chat_url,
+                    data=data,
+                    headers={"Content-Type": "application/json"}
                 )
-        except urllib.error.URLError as e:
-            raise ConnectionError(
-                f"Impossible de contacter l'API Ollama à {self.chat_url} : {e}. "
-                f"Vérifie qu'Ollama est lancé via 'ollama serve'."
-            ) from e
+                with urllib.request.urlopen(req, timeout=300) as response:
+                    resp_json = json.loads(response.read().decode("utf-8"))
+                    return OllamaResponse(
+                        message=resp_json.get("message", {}),
+                        raw_data=resp_json
+                    )
+
+            except urllib.error.HTTPError as e:
+                # 429 (trop de requêtes) et 503 (service indisponible) → relance
+                if e.code in (429, 503):
+                    last_error = ConnectionError(
+                        f"Ollama occupé ou surchargé (HTTP {e.code}). "
+                        f"Relance automatique prévue."
+                    )
+                    continue
+                # Autres erreurs HTTP → échec immédiat (pas de relance)
+                raise ConnectionError(
+                    f"Erreur HTTP {e.code} de l'API Ollama à {self.chat_url}."
+                ) from e
+
+            except urllib.error.URLError as e:
+                # Erreur réseau (Ollama non lancé, connexion refusée, timeout) → relance
+                last_error = ConnectionError(
+                    f"Impossible de contacter Ollama ({e}). "
+                    f"Vérifie qu'Ollama est lancé via 'ollama serve'."
+                )
+                continue
+
+            except TimeoutError as e:
+                last_error = e
+                continue
+
+        # Toutes les tentatives ont échoué
+        raise ConnectionError(
+            f"Impossible de contacter l'API Ollama après {len(RETRY_DELAYS_SECONDS) + 1} tentatives. "
+            f"Dernière erreur : {last_error}"
+        ) from last_error

@@ -65,19 +65,45 @@ def _chunk_text(text: str, max_chars: int = 2000, overlap: int = 200) -> List[st
 
 
 def extract_pdf_pages(file_path: Path) -> List[DocumentChunk]:
-    """Extrait le texte d'un PDF page par page via PyMuPDF (fitz)."""
+    """Extrait le texte d'un PDF page par page via PyMuPDF (fitz).
+
+    Gère deux cas particuliers sans planter le pipeline :
+    - PDF scanné (aucun texte extractible) : retourne un chunk signalé comme scanné.
+    - PDF corrompu ou illisible : retourne un chunk d'erreur et continue.
+    """
     chunks: List[DocumentChunk] = []
     try:
         import fitz  # PyMuPDF
-        doc = fitz.open(file_path)
+
+        try:
+            doc = fitz.open(file_path)
+        except Exception as e:
+            # Fichier corrompu ou format non reconnu
+            chunks.append(DocumentChunk(
+                source_file=file_path.name,
+                file_type="pdf",
+                page_number=1,
+                chunk_index=1,
+                content=f"[ERREUR DOCUMENT : Impossible d'ouvrir '{file_path.name}'. Fichier corrompu ou illisible. Détail : {e}]",
+                char_count=0
+            ))
+            return chunks
+
+        pages_with_text = 0
         for page_idx in range(len(doc)):
             page = doc[page_idx]
-            page_text = page.get_text("text").strip()
+            try:
+                page_text = page.get_text("text").strip()
+            except Exception:
+                # Page individuelle illisible → on la passe
+                continue
+
             page_num = page_idx + 1
 
             if not page_text:
                 continue
 
+            pages_with_text += 1
             sub_chunks = _chunk_text(page_text)
             for c_idx, sc in enumerate(sub_chunks, start=1):
                 chunks.append(DocumentChunk(
@@ -88,7 +114,24 @@ def extract_pdf_pages(file_path: Path) -> List[DocumentChunk]:
                     content=sc,
                     char_count=len(sc)
                 ))
+
+        # Si aucune page ne contenait du texte → PDF scanné sans couche OCR
+        if pages_with_text == 0 and len(doc) > 0:
+            chunks.append(DocumentChunk(
+                source_file=file_path.name,
+                file_type="pdf",
+                page_number=1,
+                chunk_index=1,
+                content=(
+                    f"[PDF SCANNÉ : Le document '{file_path.name}' ({len(doc)} page(s)) "
+                    f"ne contient aucun texte extractible. "
+                    f"Une reconnaissance optique de caractères (OCR) est nécessaire pour l'exploiter.]"
+                ),
+                char_count=0
+            ))
+
         doc.close()
+
     except ImportError:
         # Fallback de secours si pymupdf n'est pas encore installé
         chunks.append(DocumentChunk(
