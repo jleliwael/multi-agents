@@ -151,7 +151,7 @@ class TestOrchestration(unittest.TestCase):
         self.assertEqual(result["status"], "COMPLETED")
         self.assertEqual(len(result["facts"]), 1)
         self.assertEqual(result["facts"][0]["assertion"], "Le chiffre d'affaires 2025 est de 45 M€.")
-        self.assertIn("Rapport final rédigé par writer", result["final_output"])
+        self.assertIn("Sources et Références", result["final_output"])
 
 
 if __name__ == "__main__":

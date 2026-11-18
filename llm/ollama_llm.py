@@ -94,7 +94,7 @@ class OllamaLLM:
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=120) as response:
+            with urllib.request.urlopen(req, timeout=300) as response:
                 resp_json = json.loads(response.read().decode("utf-8"))
                 return OllamaResponse(
                     message=resp_json.get("message", {}),

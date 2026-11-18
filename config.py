@@ -29,8 +29,9 @@ class Settings:
     model_coder: str = os.getenv("MODEL_CODER", "qwen2.5-coder:7b")
     model_embedding: str = os.getenv("MODEL_EMBEDDING", "nomic-embed-text")
 
-    # Limite maximale d'appels d'outils successifs par agent
+    # Limites d'exécution et de révision
     max_tool_calls: int = int(os.getenv("MAX_TOOL_CALLS", "5"))
+    max_revisions: int = int(os.getenv("MAX_REVISIONS", "2"))
 
     # Chemins de stockage local (relatifs à la racine du projet)
     sqlite_db_path: Path = BASE_DIR / os.getenv("SQLITE_DB_PATH", "data/app.db")
@@ -39,6 +40,9 @@ class Settings:
     documents_dir: Path = BASE_DIR / "data" / "documents"
     uploads_dir: Path = BASE_DIR / "data" / "uploads"
     sandbox_dir: Path = BASE_DIR / "data" / "sandbox"
+    reports_dir: Path = BASE_DIR / "data" / "reports"
+    eval_dir: Path = BASE_DIR / "data" / "eval"
+    logs_dir: Path = BASE_DIR / "data" / "logs"
 
     # Configuration réseau pour FastAPI et Streamlit
     api_host: str = os.getenv("API_HOST", "127.0.0.1")
@@ -57,6 +61,8 @@ class Settings:
             raise ValueError("Le modèle d'embedding (MODEL_EMBEDDING) est obligatoire.")
         if self.max_tool_calls <= 0:
             raise ValueError("MAX_TOOL_CALLS doit être strictement supérieur à 0.")
+        if self.max_revisions < 0:
+            raise ValueError("MAX_REVISIONS doit être supérieur ou égal à 0.")
 
 
 # Instance unique de configuration importable partout
