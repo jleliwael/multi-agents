@@ -20,15 +20,25 @@ load_dotenv(dotenv_path=ENV_FILE)
 class Settings:
     """Structure de configuration typée pour le système multi-agents."""
 
+    # Racine du projet accessible directement sur l'instance
+    base_dir: Path = BASE_DIR
+
     # Paramètres de l'API Ollama locale
     ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     model_planner: str = os.getenv("MODEL_PLANNER", "qwen3:14b")
     model_coder: str = os.getenv("MODEL_CODER", "qwen2.5-coder:7b")
     model_embedding: str = os.getenv("MODEL_EMBEDDING", "nomic-embed-text")
 
+    # Limite maximale d'appels d'outils successifs par agent
+    max_tool_calls: int = int(os.getenv("MAX_TOOL_CALLS", "5"))
+
     # Chemins de stockage local (relatifs à la racine du projet)
     sqlite_db_path: Path = BASE_DIR / os.getenv("SQLITE_DB_PATH", "data/app.db")
     chroma_persist_dir: Path = BASE_DIR / os.getenv("CHROMA_PERSIST_DIR", "data/chroma")
+    workspace_dir: Path = BASE_DIR / "data" / "workspace"
+    documents_dir: Path = BASE_DIR / "data" / "documents"
+    uploads_dir: Path = BASE_DIR / "data" / "uploads"
+    sandbox_dir: Path = BASE_DIR / "data" / "sandbox"
 
     # Configuration réseau pour FastAPI et Streamlit
     api_host: str = os.getenv("API_HOST", "127.0.0.1")
@@ -45,6 +55,8 @@ class Settings:
             raise ValueError("Le modèle de code (MODEL_CODER) est obligatoire.")
         if not self.model_embedding:
             raise ValueError("Le modèle d'embedding (MODEL_EMBEDDING) est obligatoire.")
+        if self.max_tool_calls <= 0:
+            raise ValueError("MAX_TOOL_CALLS doit être strictement supérieur à 0.")
 
 
 # Instance unique de configuration importable partout
