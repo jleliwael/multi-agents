@@ -1,0 +1,173 @@
+[
+  {
+    "id": "task-01",
+    "titre": "Synthèse exécutive d'un rapport PDF volumineux",
+    "difficulte": "Facile",
+    "entree": {
+      "type": "document_unique",
+      "fichiers": ["rapport_activite_annuel.pdf"],
+      "instruction": "Extraire les 5 points stratégiques clés, les chiffres majeurs de l'année et les perspectives futures sous forme de synthèse exécutive de 500 mots."
+    },
+    "sortie_attendue": "Rapport Markdown structuré avec résumé exécutif, liste à puces des faits majeurs et tableau récapitulatif des indicateurs.",
+    "criteres": {
+      "qualite": "Exactitude des chiffres cités vérifiée à 100%, synthèse en moins de 600 mots, absence d'inventions.",
+      "temps_max_secondes": 120,
+      "cout": "0.00 EUR",
+      "elements_obligatoires": ["Résumé exécutif", "Chiffres clés", "Perspectives"]
+    }
+  },
+  {
+    "id": "task-02",
+    "titre": "Synthèse croisée et thématique de trois documents hétérogènes",
+    "difficulte": "Moyen",
+    "entree": {
+      "type": "multi_documents",
+      "fichiers": ["etude_marche.pdf", "notes_reunion.docx", "retours_clients.txt"],
+      "instruction": "Identifier les convergences et divergences d'opinion entre les trois documents concernant le lancement d'une nouvelle offre."
+    },
+    "sortie_attendue": "Document Markdown présentant les thèmes communs, les points de désaccord et une matrice d'alignement.",
+    "criteres": {
+      "qualite": "Chaque affirmation doit référencer explicitement le document source dont elle est issue.",
+      "temps_max_secondes": 240,
+      "cout": "0.00 EUR",
+      "elements_obligatoires": ["Points de convergence", "Divergences", "Références aux sources"]
+    }
+  },
+  {
+    "id": "task-03",
+    "titre": "Veille technologique et synthèse d'actualité sourcée",
+    "difficulte": "Moyen",
+    "entree": {
+      "type": "recherche_web_et_synthese",
+      "requete": "Dernières avancées sur les modèles de langage légers (SLM) en 2026",
+      "instruction": "Rechercher les articles récents, filtrer les 5 sources les plus fiables et rédiger une note de veille avec liens et dates de publication."
+    },
+    "sortie_attendue": "Note de synthèse Markdown de 2 pages avec état de l'art, acteurs majeurs et bibliographie annotée.",
+    "criteres": {
+      "qualite": "Minimum 5 sources identifiées et datées, liens vérifiables, résumé fidèle du consensus technique.",
+      "temps_max_secondes": 300,
+      "cout": "0.00 EUR",
+      "elements_obligatoires": ["Tendances clés", "Acteurs / Modèles", "Sources annotées"]
+    }
+  },
+  {
+    "id": "task-04",
+    "titre": "Benchmark comparatif d'outils avec matrice et recommandation",
+    "difficulte": "Difficile",
+    "entree": {
+      "type": "hybride_web_et_fichiers",
+      "fichiers": ["grille_criteres.xlsx"],
+      "sujet": "Comparer trois moteurs de bases de données vectorielles open-source (ChromaDB, Qdrant, Milvus)",
+      "instruction": "Évaluer chaque solution sur la facilité d'installation, la consommation mémoire, les performances locales et la licence. Fournir un tableau comparatif et une recommandation motivée."
+    },
+    "sortie_attendue": "Rapport complet avec tableau comparatif Markdown exhaustif, calcul de scores et paragraphe de recommandation finale.",
+    "criteres": {
+      "qualite": "Tous les critères de la grille doivent être renseignés, recommandation justifiée par au moins 3 arguments.",
+      "temps_max_secondes": 480,
+      "cout": "0.00 EUR",
+      "elements_obligatoires": ["Tableau comparatif", "Forces/Faiblesses", "Recommandation argumentée"]
+    }
+  },
+  {
+    "id": "task-05",
+    "titre": "Extraction et analyse de données tabulaires complexes dans un PDF",
+    "difficulte": "Moyen",
+    "entree": {
+      "type": "document_et_calcul",
+      "fichiers": ["bilan_financier_trimestriel.pdf"],
+      "instruction": "Extraire les tableaux de résultats, faire exécuter un script Python pour calculer le taux de croissance trimestriel et générer un résumé d'analyse financière."
+    },
+    "sortie_attendue": "Rapport Markdown contenant les données brutes extraites, le code Python exécuté dans la sandbox et l'interprétation des pourcentages calculés.",
+    "criteres": {
+      "qualite": "Exactitude arithmétique garantie par l'exécution du code en sandbox sans approximation par le LLM.",
+      "temps_max_secondes": 240,
+      "cout": "0.00 EUR",
+      "elements_obligatoires": ["Tableau des données", "Code exécuté", "Calculs exacts", "Commentaire analytique"]
+    }
+  },
+  {
+    "id": "task-06",
+    "titre": "Analyse d'écarts et détection d'anomalies entre deux versions de contrat",
+    "difficulte": "Difficile",
+    "entree": {
+      "type": "comparaison_documentaire",
+      "fichiers": ["contrat_v1.docx", "contrat_v2.docx"],
+      "instruction": "Comparer clause par clause les deux versions, identifier les ajouts, suppressions et modifications subtiles, et évaluer l'impact juridique/opérationnel de chaque changement."
+    },
+    "sortie_attendue": "Tableau d'impact des modifications avec classification de risque (Faible, Moyen, Critique) pour chaque clause modifiée.",
+    "criteres": {
+      "qualite": "Zéro modification substantielle manquée, classification de risque explicite pour chaque écart.",
+      "temps_max_secondes": 420,
+      "cout": "0.00 EUR",
+      "elements_obligatoires": ["Liste des modifications", "Tableau d'impact", "Évaluation des risques"]
+    }
+  },
+  {
+    "id": "task-07",
+    "titre": "Veille concurrentielle ciblée sur les prix et fonctionnalités",
+    "difficulte": "Difficile",
+    "entree": {
+      "type": "veille_web",
+      "sujet": "Tarification et formules d'abonnement de 3 concurrents SaaS dans l'analyse de données",
+      "instruction": "Collecter les grilles tarifaires publiques, décomposer les quotas de chaque palier et mettre en évidence les différenciateurs commerciaux."
+    },
+    "sortie_attendue": "Grille tarifaire normalisée en Markdown avec analyse des stratégies de tarification observées.",
+    "criteres": {
+      "qualite": "Chiffres de prix conformes aux pages officielles consultées, date de relevé précisée.",
+      "temps_max_secondes": 360,
+      "cout": "0.00 EUR",
+      "elements_obligatoires": ["Grille tarifaire", "Comparatif fonctionnel", "Analyse de positionnement"]
+    }
+  },
+  {
+    "id": "task-08",
+    "titre": "Question-Réponse documentaire précise avec citations textuelles (RAG local)",
+    "difficulte": "Facile",
+    "entree": {
+      "type": "rag_documentaire",
+      "collection": "politiques_rh_internes",
+      "question": "Quelles sont les modalités précises de prise en charge du matériel de télétravail et quel est le plafond de remboursement annuel ?"
+    },
+    "sortie_attendue": "Réponse concise et directe citant mot à mot l'article et la page du document source concerné.",
+    "criteres": {
+      "qualite": "Présence obligatoire de la citation exacte entre guillemets et du numéro de page/section source.",
+      "temps_max_secondes": 90,
+      "cout": "0.00 EUR",
+      "elements_obligatoires": ["Réponse directe", "Citation exacte", "Référence de section"]
+    }
+  },
+  {
+    "id": "task-09",
+    "titre": "Revue documentaire et état de l'art scientifique/technique",
+    "difficulte": "Moyen",
+    "entree": {
+      "type": "corpus_recherche",
+      "fichiers": ["article_1.pdf", "article_2.pdf", "article_3.pdf", "article_4.pdf"],
+      "instruction": "Rédiger une revue de littérature structurée résumant les méthodologies utilisées, les limites soulevées par les auteurs et les pistes de recherche ouvertes."
+    },
+    "sortie_attendue": "Synthèse académique structurée en 4 sections : Introduction, Méthodologies comparées, Limites identifiées, Conclusions.",
+    "criteres": {
+      "qualite": "Chaque méthodologie doit être rattachée à son auteur/papier respectif, aucune extrapolation hors corpus.",
+      "temps_max_secondes": 300,
+      "cout": "0.00 EUR",
+      "elements_obligatoires": ["Méthodologies comparées", "Limites documentées", "Synthèse globale"]
+    }
+  },
+  {
+    "id": "task-10",
+    "titre": "Rapport d'audit documentaire global avec plan d'action hiérarchisé",
+    "difficulte": "Difficile",
+    "entree": {
+      "type": "dossier_complet",
+      "fichiers": ["procedure_securite.pdf", "registre_incidents.csv", "rapport_audit_precedent.docx"],
+      "instruction": "Croiser les incidents déclarés avec les procédures théoriques pour identifier les failles organisationnelles et proposer un plan d'action à 30, 60 et 90 jours."
+    },
+    "sortie_attendue": "Rapport d'audit formel en Markdown avec diagnostic chiffré, matrice de criticité et plan d'action chronologique détaillé.",
+    "criteres": {
+      "qualite": "Cohérence entre les incidents observés et les actions correctives recommandées, calendrier réaliste.",
+      "temps_max_secondes": 540,
+      "cout": "0.00 EUR",
+      "elements_obligatoires": ["Diagnostic chiffré", "Matrice des failles", "Plan d'action 30/60/90 jours"]
+    }
+  }
+]
