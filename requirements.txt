@@ -1,0 +1,24 @@
+# Client HTTP asynchrone pour Ollama
+httpx==0.28.1
+
+# Configuration et validation de schémas
+python-dotenv==1.0.1
+pydantic==2.10.4
+
+# API Backend et Serveur
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Base vectorielle locale
+chromadb==0.6.3
+
+# Interface graphique utilisateur
+streamlit==1.42.0
+
+# Traitement documentaire (PDF, Word, Excel)
+pymupdf==1.25.3
+python-docx==1.1.2
+openpyxl==3.1.5
+
+# Extraction et nettoyage de pages web
+trafilatura==2.0.0

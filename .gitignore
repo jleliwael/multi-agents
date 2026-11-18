@@ -1,0 +1,26 @@
+# Environnement virtuel
+.venv/
+env/
+venv/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Configuration et secrets
+.env
+
+# Données locales (Bases de données et vecteurs)
+data/
+*.sqlite
+*.sqlite3
+*.db
+chroma_db/
+
+# IDE et OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

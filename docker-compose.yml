@@ -1,0 +1,3 @@
+# Configuration optionnelle pour exécuter l'infrastructure locale (ex: Ollama, ChromaDB distant ou PostgreSQL)
+version: "3.8"
+services: {}
