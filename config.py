@@ -33,6 +33,13 @@ class Settings:
     max_tool_calls: int = int(os.getenv("MAX_TOOL_CALLS", "5"))
     max_revisions: int = int(os.getenv("MAX_REVISIONS", "2"))
 
+    # Limites globales par tâche (réglables dans .env)
+    max_steps: int = int(os.getenv("MAX_STEPS", "10"))
+    max_web_searches: int = int(os.getenv("MAX_WEB_SEARCHES", "5"))
+    max_pages_read: int = int(os.getenv("MAX_PAGES_READ", "30"))
+    max_tokens: int = int(os.getenv("MAX_TOKENS", "50000"))
+    max_seconds: int = int(os.getenv("MAX_SECONDS", "600"))
+
     # Recherche Web externe (SearXNG local ou API optionnelle)
     searxng_url: str = os.getenv("SEARXNG_URL", "http://localhost:8080")
     tavily_api_key: str = os.getenv("TAVILY_API_KEY", "")
