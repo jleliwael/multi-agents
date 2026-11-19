@@ -37,6 +37,17 @@ def init_db(db_path: Optional[Path] = None) -> None:
                 created_at TEXT NOT NULL
             );
             """)
+            # Phase 9 : avis des utilisateurs (👍 = 1, 👎 = -1) sur un rapport ou une section
+            conn.execute("""
+            CREATE TABLE IF NOT EXISTS feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id TEXT NOT NULL,
+                rating INTEGER NOT NULL,
+                section TEXT NOT NULL DEFAULT 'rapport',
+                comment TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL
+            );
+            """)
     finally:
         conn.close()
 

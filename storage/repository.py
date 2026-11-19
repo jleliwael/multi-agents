@@ -90,5 +90,41 @@ class TaskRepository:
             conn.close()
 
 
-# Instance singleton du repository
+class FeedbackRepository:
+    """Avis 👍 / 👎 laissés depuis l'interface (Phase 9)."""
+
+    def __init__(self, db_path: Optional[Path] = None):
+        self.db_path = db_path
+        init_db(self.db_path)
+
+    def add(self, task_id: str, rating: int, section: str = "rapport", comment: str = "") -> int:
+        from datetime import datetime, timezone
+        rating = 1 if rating > 0 else -1
+        conn = get_db_connection(self.db_path)
+        try:
+            with conn:
+                cur = conn.execute(
+                    "INSERT INTO feedback (task_id, rating, section, comment, created_at) VALUES (?, ?, ?, ?, ?);",
+                    (task_id, rating, section or "rapport", (comment or "")[:2000], datetime.now(timezone.utc).isoformat()),
+                )
+                return int(cur.lastrowid)
+        finally:
+            conn.close()
+
+    def list(self, task_id: Optional[str] = None, limit: int = 500) -> List[dict]:
+        conn = get_db_connection(self.db_path)
+        try:
+            if task_id:
+                rows = conn.execute(
+                    "SELECT * FROM feedback WHERE task_id = ? ORDER BY created_at DESC LIMIT ?;", (task_id, limit)
+                ).fetchall()
+            else:
+                rows = conn.execute("SELECT * FROM feedback ORDER BY created_at DESC LIMIT ?;", (limit,)).fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+
+# Instances singleton des repositories
 task_repository = TaskRepository()
+feedback_repository = FeedbackRepository()

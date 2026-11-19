@@ -146,5 +146,16 @@ class LongTermMemory:
         return sorted(list(seen_files))
 
 
+    def delete_file(self, source_file: str) -> int:
+        """Retire un document de l'index (le fichier original n'est jamais touché)."""
+        if not CHROMADB_AVAILABLE or not self.collection:
+            return 0
+        data = self.collection.get(where={"source_file": source_file}, include=[])
+        ids = data.get("ids", []) or []
+        if ids:
+            self.collection.delete(ids=ids)
+        return len(ids)
+
+
 # Instance singleton
 long_term_memory = LongTermMemory()

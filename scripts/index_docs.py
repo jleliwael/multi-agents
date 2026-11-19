@@ -18,6 +18,18 @@ from memory.chunking import create_chunks_from_document_pages
 from memory.long_term import long_term_memory
 
 
+def index_file(file_path: Path) -> int:
+    """Indexe un seul document dans ChromaDB et retourne le nombre de morceaux ajoutés."""
+    raw_chunks = extract_document(str(file_path))
+    pages_data = [{"page_number": rc.page_number, "content": rc.content} for rc in raw_chunks]
+    chunks = create_chunks_from_document_pages(
+        pages=pages_data,
+        source_file=file_path.name,
+        file_type=file_path.suffix.lower().replace(".", ""),
+    )
+    return long_term_memory.add_chunks(chunks)
+
+
 def index_documents_directory() -> None:
     print("=" * 70)
     print("      INDEXATION INCRÉMENTALE DANS CHROMADB (MÉMOIRE LONG TERME)      ")
