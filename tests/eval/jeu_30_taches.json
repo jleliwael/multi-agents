@@ -1,126 +1,762 @@
 {
-  "description": "Jeu d'évaluation de 30 tâches (Phase 7). Les documents sont dans tests/fixtures/ pour des résultats reproductibles. 'doit_contenir' = liste de groupes ; un groupe est validé si UNE de ses variantes apparaît dans le rapport (comparaison sans accents ni majuscules, espaces dans les nombres ignorés).",
-  "version": 1,
-  "taches": [
-    {"id": "eval-01", "famille": "question", "titre": "Chiffre d'affaires 2025",
-     "objectif": "Quel est le chiffre d'affaires consolidé 2025 indiqué dans exemple.pdf ? Cite la page.",
-     "fichiers": ["tests/fixtures/exemple.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["45"]], "sources_attendues": ["exemple.pdf"], "sources_min": 1}},
-    {"id": "eval-02", "famille": "question", "titre": "Croissance annuelle",
-     "objectif": "De combien le chiffre d'affaires a-t-il progressé en 2025 selon exemple.pdf ?",
-     "fichiers": ["tests/fixtures/exemple.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["12"]], "sources_attendues": ["exemple.pdf"], "sources_min": 1}},
-    {"id": "eval-03", "famille": "question", "titre": "Part de l'activité logiciels",
-     "objectif": "Quelle part des revenus représente l'activité logiciels d'après exemple.pdf ?",
-     "fichiers": ["tests/fixtures/exemple.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["65"]], "sources_attendues": ["exemple.pdf"], "sources_min": 1}},
-    {"id": "eval-04", "famille": "question", "titre": "Budget R&D",
-     "objectif": "Quel montant a été investi en recherche et développement selon exemple.pdf ?",
-     "fichiers": ["tests/fixtures/exemple.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["8,5", "8.5"]], "sources_attendues": ["exemple.pdf"], "sources_min": 1}},
-    {"id": "eval-05", "famille": "question", "titre": "Économies d'inférence cloud",
-     "objectif": "Quel effet a eu l'infrastructure d'IA locale sur les coûts d'inférence cloud (exemple.pdf) ?",
-     "fichiers": ["tests/fixtures/exemple.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["40"]], "sources_attendues": ["exemple.pdf"], "sources_min": 1}},
-    {"id": "eval-06", "famille": "question", "titre": "Satisfaction client",
-     "objectif": "Quel est le taux de satisfaction client en fin d'exercice dans exemple.pdf ?",
-     "fichiers": ["tests/fixtures/exemple.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["94,2", "94.2"]], "sources_attendues": ["exemple.pdf"], "sources_min": 1}},
-    {"id": "eval-07", "famille": "question", "titre": "Objectif 2026",
-     "objectif": "Quel est l'objectif principal pour 2026 selon exemple.pdf ?",
-     "fichiers": ["tests/fixtures/exemple.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["europ"], ["international"]], "sources_attendues": ["exemple.pdf"], "sources_min": 1}},
-    {"id": "eval-08", "famille": "question", "titre": "Plafond d'investissements matériels",
-     "objectif": "À combien est plafonné l'investissement matériel en 2026 dans exemple.pdf ?",
-     "fichiers": ["tests/fixtures/exemple.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["5 millions", "5 m", "5000000"]], "sources_attendues": ["exemple.pdf"], "sources_min": 1}},
-    {"id": "eval-09", "famille": "question", "titre": "Principal risque",
-     "objectif": "Quel est le principal facteur de risque identifié dans exemple.pdf ?",
-     "fichiers": ["tests/fixtures/exemple.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["energ"]], "sources_attendues": ["exemple.pdf"], "sources_min": 1}},
-    {"id": "eval-10", "famille": "question", "titre": "Décision sur l'exécution locale",
-     "objectif": "Que dit le compte-rendu exemple.docx sur l'exécution des agents IA ?",
-     "fichiers": ["tests/fixtures/exemple.docx"], "web": false,
-     "attendu": {"doit_contenir": [["local"]], "sources_attendues": ["exemple.docx"], "sources_min": 1}},
-    {"id": "eval-11", "famille": "question", "titre": "Opérations soumises à approbation",
-     "objectif": "Quelles opérations exigent une approbation humaine selon exemple.docx ?",
-     "fichiers": ["tests/fixtures/exemple.docx"], "web": false,
-     "attendu": {"doit_contenir": [["paiement"], ["suppression"]], "sources_attendues": ["exemple.docx"], "sources_min": 1}},
-    {"id": "eval-12", "famille": "question", "titre": "Participants à la réunion",
-     "objectif": "Qui participait à la réunion décrite dans exemple.docx ?",
-     "fichiers": ["tests/fixtures/exemple.docx"], "web": false,
-     "attendu": {"doit_contenir": [["direction generale"], ["r&d", "recherche"], ["securite"]], "sources_attendues": ["exemple.docx"], "sources_min": 1}},
-    {"id": "eval-13", "famille": "donnees", "titre": "Chiffre d'affaires du trimestre",
-     "objectif": "Calcule le chiffre d'affaires total de janvier à mars à partir de exemple.xlsx.",
-     "fichiers": ["tests/fixtures/exemple.xlsx"], "web": false,
-     "attendu": {"doit_contenir": [["1150000", "1,15 m", "1.15 m", "1150 k"]], "sources_attendues": ["exemple.xlsx"], "sources_min": 1}},
-    {"id": "eval-14", "famille": "donnees", "titre": "Meilleur mois",
-     "objectif": "Quel mois a la meilleure marge nette dans exemple.xlsx, et de combien ?",
-     "fichiers": ["tests/fixtures/exemple.xlsx"], "web": false,
-     "attendu": {"doit_contenir": [["mars"], ["190000", "190 k", "190k"]], "sources_attendues": ["exemple.xlsx"], "sources_min": 1}},
-    {"id": "eval-15", "famille": "donnees", "titre": "Marge nette moyenne",
-     "objectif": "Calcule la marge nette mensuelle moyenne du trimestre dans exemple.xlsx.",
-     "fichiers": ["tests/fixtures/exemple.xlsx"], "web": false,
-     "attendu": {"doit_contenir": [["163333", "163 333", "163,3", "163.3"]], "sources_attendues": ["exemple.xlsx"], "sources_min": 1}},
-    {"id": "eval-16", "famille": "donnees", "titre": "Croissance des ventes",
-     "objectif": "De combien de pourcents le chiffre d'affaires a-t-il augmenté entre janvier et mars (exemple.xlsx) ?",
-     "fichiers": ["tests/fixtures/exemple.xlsx"], "web": false,
-     "attendu": {"doit_contenir": [["20"]], "sources_attendues": ["exemple.xlsx"], "sources_min": 1}},
-    {"id": "eval-17", "famille": "synthese", "titre": "Synthèse du rapport annuel",
-     "objectif": "Fais une synthèse structurée de exemple.pdf avec les points clés et les sources.",
-     "fichiers": ["tests/fixtures/exemple.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["45"], ["12"], ["europ"], ["energ"]], "sources_attendues": ["exemple.pdf"], "sources_min": 3}},
-    {"id": "eval-18", "famille": "synthese", "titre": "Synthèse du compte-rendu",
-     "objectif": "Résume les décisions du compte-rendu exemple.docx.",
-     "fichiers": ["tests/fixtures/exemple.docx"], "web": false,
-     "attendu": {"doit_contenir": [["local"], ["approbation"]], "sources_attendues": ["exemple.docx"], "sources_min": 2}},
-    {"id": "eval-19", "famille": "synthese", "titre": "Synthèse croisée rapport + réunion",
-     "objectif": "Fais une synthèse croisée de exemple.pdf et exemple.docx : stratégie IA et règles de sécurité.",
-     "fichiers": ["tests/fixtures/exemple.pdf", "tests/fixtures/exemple.docx"], "web": false,
-     "attendu": {"doit_contenir": [["local"], ["40"], ["approbation"]], "sources_attendues": ["exemple.pdf", "exemple.docx"], "sources_min": 2}},
-    {"id": "eval-20", "famille": "synthese", "titre": "Perspectives et risques",
-     "objectif": "Rédige une note de 5 points sur les perspectives et les risques 2026 d'après exemple.pdf.",
-     "fichiers": ["tests/fixtures/exemple.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["europ"], ["energ"]], "sources_attendues": ["exemple.pdf"], "sources_min": 2}},
-    {"id": "eval-21", "famille": "synthese", "titre": "Synthèse financière rapport + ventes",
-     "objectif": "Synthétise les indicateurs financiers de exemple.pdf et des ventes mensuelles de exemple.xlsx.",
-     "fichiers": ["tests/fixtures/exemple.pdf", "tests/fixtures/exemple.xlsx"], "web": false,
-     "attendu": {"doit_contenir": [["45"], ["mars", "350000", "420000"]], "sources_attendues": ["exemple.pdf", "exemple.xlsx"], "sources_min": 2}},
-    {"id": "eval-22", "famille": "comparatif", "titre": "Comparer trois offres",
-     "objectif": "Compare les trois offres de offres_logiciels.docx (prix, utilisateurs, support, hébergement).",
-     "fichiers": ["tests/fixtures/offres_logiciels.docx"], "web": false,
-     "attendu": {"doit_contenir": [["comptasimple"], ["gestpro"], ["librecompta"], ["29"], ["49"]], "sources_attendues": ["offres_logiciels.docx"], "sources_min": 3}},
-    {"id": "eval-23", "famille": "comparatif", "titre": "Recommandation conforme à la règle du local",
-     "objectif": "Recommande une offre de offres_logiciels.docx compatible avec la décision de exemple.docx sur l'exécution en local.",
-     "fichiers": ["tests/fixtures/offres_logiciels.docx", "tests/fixtures/exemple.docx"], "web": false,
-     "attendu": {"doit_contenir": [["gestpro", "librecompta"], ["local"]], "sources_attendues": ["offres_logiciels.docx", "exemple.docx"], "sources_min": 2}},
-    {"id": "eval-24", "famille": "comparatif", "titre": "Offre la moins chère",
-     "objectif": "Quelle est l'offre la moins chère dans offres_logiciels.docx et quelle est sa contrepartie ?",
-     "fichiers": ["tests/fixtures/offres_logiciels.docx"], "web": false,
-     "attendu": {"doit_contenir": [["librecompta"], ["maintenance", "communautaire"]], "sources_attendues": ["offres_logiciels.docx"], "sources_min": 1}},
-    {"id": "eval-25", "famille": "comparatif", "titre": "Tableau comparatif",
-     "objectif": "Produis un tableau comparatif Markdown des offres de offres_logiciels.docx.",
-     "fichiers": ["tests/fixtures/offres_logiciels.docx"], "web": false,
-     "attendu": {"doit_contenir": [["|"], ["illimit"], ["10 utilisateurs", "10"]], "sources_attendues": ["offres_logiciels.docx"], "sources_min": 2}},
-    {"id": "eval-26", "famille": "traduction", "titre": "Traduire un rapport anglais",
-     "objectif": "Traduis et résume en français les chiffres clés de market_report_en.pdf.",
-     "fichiers": ["tests/fixtures/market_report_en.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["35"], ["78"], ["confidentialite", "vie privee", "donnees"]], "sources_attendues": ["market_report_en.pdf"], "sources_min": 2}},
-    {"id": "eval-27", "famille": "traduction", "titre": "Frein principal (source anglaise)",
-     "objectif": "Selon market_report_en.pdf, quel est le principal frein à l'adoption de l'IA locale ? Réponds en français.",
-     "fichiers": ["tests/fixtures/market_report_en.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["competence"]], "sources_attendues": ["market_report_en.pdf"], "sources_min": 1}},
-    {"id": "eval-28", "famille": "robustesse", "titre": "Information absente (effectif)",
-     "objectif": "Combien d'employés compte l'entreprise en 2025 selon exemple.pdf ?",
-     "fichiers": ["tests/fixtures/exemple.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["ne mentionne pas", "ne precise pas", "n'indique pas", "pas d'information", "aucune information", "non mentionne", "non precise", "introuvable", "ne contient pas", "pas mentionne", "pas precise", "pas indique"]], "sources_min": 0}},
-    {"id": "eval-29", "famille": "robustesse", "titre": "Information absente (prévision 2030)",
-     "objectif": "Quel chiffre d'affaires est prévu pour 2030 dans exemple.pdf ?",
-     "fichiers": ["tests/fixtures/exemple.pdf"], "web": false,
-     "attendu": {"doit_contenir": [["ne mentionne pas", "ne precise pas", "n'indique pas", "pas d'information", "aucune information", "non mentionne", "non precise", "introuvable", "ne contient pas", "pas mentionne", "pas precise", "pas indique", "aucune prevision"]], "sources_min": 0}},
-    {"id": "eval-30", "famille": "veille", "titre": "Veille web Ollama",
-     "objectif": "Fais une veille sur les nouveautés récentes d'Ollama (assistants IA locaux) avec 3 points sourcés par des URL.",
-     "fichiers": [], "web": true,
-     "attendu": {"doit_contenir": [["ollama"], ["http"]], "sources_min": 2}}
-  ]
+ "description": "Jeu d'évaluation de 30 tâches (Phase 7). Les documents sont dans tests/fixtures/ pour des résultats reproductibles. 'doit_contenir' = liste de groupes ; un groupe est validé si UNE de ses variantes apparaît dans le rapport (comparaison sans accents ni majuscules, espaces dans les nombres ignorés).",
+ "version": 1,
+ "taches": [
+  {
+   "id": "eval-01",
+   "famille": "question",
+   "titre": "Chiffre d'affaires 2025",
+   "objectif": "Quel est le chiffre d'affaires consolidé 2025 indiqué dans exemple.pdf ? Cite la page.",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "45"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.pdf"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-02",
+   "famille": "question",
+   "titre": "Croissance annuelle",
+   "objectif": "De combien le chiffre d'affaires a-t-il progressé en 2025 selon exemple.pdf ?",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "12"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.pdf"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-03",
+   "famille": "question",
+   "titre": "Part de l'activité logiciels",
+   "objectif": "Quelle part des revenus représente l'activité logiciels d'après exemple.pdf ?",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "65"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.pdf"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-04",
+   "famille": "question",
+   "titre": "Budget R&D",
+   "objectif": "Quel montant a été investi en recherche et développement selon exemple.pdf ?",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "8,5",
+      "8.5"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.pdf"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-05",
+   "famille": "question",
+   "titre": "Économies d'inférence cloud",
+   "objectif": "Quel effet a eu l'infrastructure d'IA locale sur les coûts d'inférence cloud (exemple.pdf) ?",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "40"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.pdf"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-06",
+   "famille": "question",
+   "titre": "Satisfaction client",
+   "objectif": "Quel est le taux de satisfaction client en fin d'exercice dans exemple.pdf ?",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "94,2",
+      "94.2"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.pdf"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-07",
+   "famille": "question",
+   "titre": "Objectif 2026",
+   "objectif": "Quel est l'objectif principal pour 2026 selon exemple.pdf ?",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "europ"
+     ],
+     [
+      "international"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.pdf"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-08",
+   "famille": "question",
+   "titre": "Plafond d'investissements matériels",
+   "objectif": "À combien est plafonné l'investissement matériel en 2026 dans exemple.pdf ?",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "5 millions",
+      "5 m",
+      "5000000"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.pdf"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-09",
+   "famille": "question",
+   "titre": "Principal risque",
+   "objectif": "Quel est le principal facteur de risque identifié dans exemple.pdf ?",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "energ"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.pdf"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-10",
+   "famille": "question",
+   "titre": "Décision sur l'exécution locale",
+   "objectif": "Que dit le compte-rendu exemple.docx sur l'exécution des agents IA ?",
+   "fichiers": [
+    "tests/fixtures/exemple.docx"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "local"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.docx"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-11",
+   "famille": "question",
+   "titre": "Opérations soumises à approbation",
+   "objectif": "Quelles opérations exigent une approbation humaine selon exemple.docx ?",
+   "fichiers": [
+    "tests/fixtures/exemple.docx"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "paiement"
+     ],
+     [
+      "suppression"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.docx"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-12",
+   "famille": "question",
+   "titre": "Participants à la réunion",
+   "objectif": "Qui participait à la réunion décrite dans exemple.docx ?",
+   "fichiers": [
+    "tests/fixtures/exemple.docx"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "direction generale"
+     ],
+     [
+      "r&d",
+      "recherche"
+     ],
+     [
+      "securite"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.docx"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-13",
+   "famille": "donnees",
+   "titre": "Chiffre d'affaires du trimestre",
+   "objectif": "Calcule le chiffre d'affaires total de janvier à mars à partir de exemple.xlsx.",
+   "fichiers": [
+    "tests/fixtures/exemple.xlsx"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "1150000",
+      "1,15 m",
+      "1.15 m",
+      "1150 k"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.xlsx"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-14",
+   "famille": "donnees",
+   "titre": "Meilleur mois",
+   "objectif": "Quel mois a la meilleure marge nette dans exemple.xlsx, et de combien ?",
+   "fichiers": [
+    "tests/fixtures/exemple.xlsx"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "mars"
+     ],
+     [
+      "190000",
+      "190 k",
+      "190k"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.xlsx"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-15",
+   "famille": "donnees",
+   "titre": "Marge nette moyenne",
+   "objectif": "Calcule la marge nette mensuelle moyenne du trimestre dans exemple.xlsx.",
+   "fichiers": [
+    "tests/fixtures/exemple.xlsx"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "163333",
+      "163 333",
+      "163,3",
+      "163.3"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.xlsx"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-16",
+   "famille": "donnees",
+   "titre": "Croissance des ventes",
+   "objectif": "De combien de pourcents le chiffre d'affaires a-t-il augmenté entre janvier et mars (exemple.xlsx) ?",
+   "fichiers": [
+    "tests/fixtures/exemple.xlsx"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "20"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.xlsx"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-17",
+   "famille": "synthese",
+   "titre": "Synthèse du rapport annuel",
+   "objectif": "Fais une synthèse structurée de exemple.pdf avec les points clés et les sources.",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "45"
+     ],
+     [
+      "12"
+     ],
+     [
+      "europ"
+     ],
+     [
+      "energ"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.pdf"
+    ],
+    "sources_min": 3
+   }
+  },
+  {
+   "id": "eval-18",
+   "famille": "synthese",
+   "titre": "Synthèse du compte-rendu",
+   "objectif": "Résume les décisions du compte-rendu exemple.docx.",
+   "fichiers": [
+    "tests/fixtures/exemple.docx"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "local"
+     ],
+     [
+      "approbation"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.docx"
+    ],
+    "sources_min": 2
+   }
+  },
+  {
+   "id": "eval-19",
+   "famille": "synthese",
+   "titre": "Synthèse croisée rapport + réunion",
+   "objectif": "Fais une synthèse croisée de exemple.pdf et exemple.docx : stratégie IA et règles de sécurité.",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf",
+    "tests/fixtures/exemple.docx"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "local"
+     ],
+     [
+      "40"
+     ],
+     [
+      "approbation"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.pdf",
+     "exemple.docx"
+    ],
+    "sources_min": 2
+   }
+  },
+  {
+   "id": "eval-20",
+   "famille": "synthese",
+   "titre": "Perspectives et risques",
+   "objectif": "Rédige une note de 5 points sur les perspectives et les risques 2026 d'après exemple.pdf.",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "europ"
+     ],
+     [
+      "energ"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.pdf"
+    ],
+    "sources_min": 2
+   }
+  },
+  {
+   "id": "eval-21",
+   "famille": "synthese",
+   "titre": "Synthèse financière rapport + ventes",
+   "objectif": "Synthétise les indicateurs financiers de exemple.pdf et des ventes mensuelles de exemple.xlsx.",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf",
+    "tests/fixtures/exemple.xlsx"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "45"
+     ],
+     [
+      "mars",
+      "350000",
+      "420000"
+     ]
+    ],
+    "sources_attendues": [
+     "exemple.pdf",
+     "exemple.xlsx"
+    ],
+    "sources_min": 2
+   }
+  },
+  {
+   "id": "eval-22",
+   "famille": "comparatif",
+   "titre": "Comparer trois offres",
+   "objectif": "Compare les trois offres de offres_logiciels.docx (prix, utilisateurs, support, hébergement).",
+   "fichiers": [
+    "tests/fixtures/offres_logiciels.docx"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "comptasimple"
+     ],
+     [
+      "gestpro"
+     ],
+     [
+      "librecompta"
+     ],
+     [
+      "29"
+     ],
+     [
+      "49"
+     ]
+    ],
+    "sources_attendues": [
+     "offres_logiciels.docx"
+    ],
+    "sources_min": 3
+   }
+  },
+  {
+   "id": "eval-23",
+   "famille": "comparatif",
+   "titre": "Recommandation conforme à la règle du local",
+   "objectif": "Recommande une offre de offres_logiciels.docx compatible avec la décision de exemple.docx sur l'exécution en local.",
+   "fichiers": [
+    "tests/fixtures/offres_logiciels.docx",
+    "tests/fixtures/exemple.docx"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "gestpro",
+      "librecompta"
+     ],
+     [
+      "local"
+     ]
+    ],
+    "sources_attendues": [
+     "offres_logiciels.docx",
+     "exemple.docx"
+    ],
+    "sources_min": 2
+   }
+  },
+  {
+   "id": "eval-24",
+   "famille": "comparatif",
+   "titre": "Offre la moins chère",
+   "objectif": "Quelle est l'offre la moins chère dans offres_logiciels.docx et quelle est sa contrepartie ?",
+   "fichiers": [
+    "tests/fixtures/offres_logiciels.docx"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "librecompta"
+     ],
+     [
+      "maintenance",
+      "communautaire"
+     ]
+    ],
+    "sources_attendues": [
+     "offres_logiciels.docx"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-25",
+   "famille": "comparatif",
+   "titre": "Tableau comparatif",
+   "objectif": "Produis un tableau comparatif Markdown des offres de offres_logiciels.docx.",
+   "fichiers": [
+    "tests/fixtures/offres_logiciels.docx"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "|"
+     ],
+     [
+      "illimit"
+     ],
+     [
+      "10 utilisateurs",
+      "10"
+     ]
+    ],
+    "sources_attendues": [
+     "offres_logiciels.docx"
+    ],
+    "sources_min": 2
+   }
+  },
+  {
+   "id": "eval-26",
+   "famille": "traduction",
+   "titre": "Traduire un rapport anglais",
+   "objectif": "Traduis et résume en français les chiffres clés de market_report_en.pdf.",
+   "fichiers": [
+    "tests/fixtures/market_report_en.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "35"
+     ],
+     [
+      "78"
+     ],
+     [
+      "confidentialite",
+      "vie privee",
+      "donnees"
+     ]
+    ],
+    "sources_attendues": [
+     "market_report_en.pdf"
+    ],
+    "sources_min": 2
+   }
+  },
+  {
+   "id": "eval-27",
+   "famille": "traduction",
+   "titre": "Frein principal (source anglaise)",
+   "objectif": "Selon market_report_en.pdf, quel est le principal frein à l'adoption de l'IA locale ? Réponds en français.",
+   "fichiers": [
+    "tests/fixtures/market_report_en.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "competence"
+     ]
+    ],
+    "sources_attendues": [
+     "market_report_en.pdf"
+    ],
+    "sources_min": 1
+   }
+  },
+  {
+   "id": "eval-28",
+   "famille": "robustesse",
+   "titre": "Information absente (effectif)",
+   "objectif": "Combien d'employés compte l'entreprise en 2025 selon exemple.pdf ?",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "ne mentionne pas",
+      "ne precise pas",
+      "n'indique pas",
+      "pas d'information",
+      "aucune information",
+      "non mentionne",
+      "non precise",
+      "introuvable",
+      "ne contient pas",
+      "pas mentionne",
+      "pas precise",
+      "pas indique",
+      "pas ete mentionne",
+      "pas ete explicitement",
+      "pas ete trouve",
+      "n'apparait pas",
+      "ne figure pas",
+      "non disponible",
+      "pas disponible",
+      "aucune mention"
+     ]
+    ],
+    "sources_min": 0
+   }
+  },
+  {
+   "id": "eval-29",
+   "famille": "robustesse",
+   "titre": "Information absente (prévision 2030)",
+   "objectif": "Quel chiffre d'affaires est prévu pour 2030 dans exemple.pdf ?",
+   "fichiers": [
+    "tests/fixtures/exemple.pdf"
+   ],
+   "web": false,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "ne mentionne pas",
+      "ne precise pas",
+      "n'indique pas",
+      "pas d'information",
+      "aucune information",
+      "non mentionne",
+      "non precise",
+      "introuvable",
+      "ne contient pas",
+      "pas mentionne",
+      "pas precise",
+      "pas indique",
+      "aucune prevision",
+      "pas ete mentionne",
+      "pas ete explicitement",
+      "pas ete trouve",
+      "n'apparait pas",
+      "ne figure pas",
+      "non disponible",
+      "pas disponible",
+      "aucune mention"
+     ]
+    ],
+    "sources_min": 0
+   }
+  },
+  {
+   "id": "eval-30",
+   "famille": "veille",
+   "titre": "Veille web Ollama",
+   "objectif": "Fais une veille sur les nouveautés récentes d'Ollama (assistants IA locaux) avec 3 points sourcés par des URL.",
+   "fichiers": [],
+   "web": true,
+   "attendu": {
+    "doit_contenir": [
+     [
+      "ollama"
+     ],
+     [
+      "http"
+     ]
+    ],
+    "sources_min": 2
+   }
+  }
+ ]
 }

@@ -139,7 +139,7 @@ class OllamaLLM:
                     data=data,
                     headers={"Content-Type": "application/json"}
                 )
-                with urllib.request.urlopen(req, timeout=300) as response:
+                with urllib.request.urlopen(req, timeout=settings.ollama_timeout) as response:
                     resp_json = json.loads(response.read().decode("utf-8"))
                     return OllamaResponse(
                         message=resp_json.get("message", {}),
@@ -160,7 +160,11 @@ class OllamaLLM:
                 ) from e
 
             except urllib.error.URLError as e:
-                # Erreur réseau (Ollama non lancé, connexion refusée, timeout) → relance
+                if isinstance(e.reason, TimeoutError):
+                    raise ConnectionError(
+                        f"Ollama n'a pas répondu en {settings.ollama_timeout}s. Augmente OLLAMA_TIMEOUT."
+                    ) from e
+                # Erreur réseau (Ollama non lancé, connexion refusée) → relance
                 last_error = ConnectionError(
                     f"Impossible de contacter Ollama ({e}). "
                     f"Vérifie qu'Ollama est lancé via 'ollama serve'."
@@ -168,8 +172,11 @@ class OllamaLLM:
                 continue
 
             except TimeoutError as e:
-                last_error = e
-                continue
+                # Une génération trop longue ne sera pas plus rapide en la relançant
+                raise ConnectionError(
+                    f"Ollama n'a pas répondu en {settings.ollama_timeout}s (modèle trop lent pour ce prompt). "
+                    f"Augmente OLLAMA_TIMEOUT ou réduis NUM_CTX / la taille des documents."
+                ) from e
 
         # Toutes les tentatives ont échoué
         raise ConnectionError(

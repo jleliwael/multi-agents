@@ -130,7 +130,8 @@ class WriterAgent:
                 temperature=0.2
             )
             body = resp.content.strip()
-        except Exception:
+        except Exception as exc:
+            print(f"[Rédacteur] Modèle indisponible ({exc}) : rapport de secours à partir des faits.")
             # Rédaction de secours déterministe
             body = (
                 f"# Rapport d'Analyse : {objective}\n\n"

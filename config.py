@@ -45,6 +45,8 @@ class Settings:
     num_ctx: int = int(os.getenv("NUM_CTX", "8192"))
     # Longueur maximale d'une réponse : évite qu'un modèle « s'emballe » pendant des minutes
     max_output_tokens: int = int(os.getenv("MAX_OUTPUT_TOKENS", "2048"))
+    # Délai maximal d'une réponse d'Ollama (secondes) : qwen3:14b déborde de 6 Go de VRAM, il est lent
+    ollama_timeout: int = int(os.getenv("OLLAMA_TIMEOUT", "900"))
     # Mode « réflexion » de qwen3 (plus lent ; désactivé par défaut)
     ollama_think: bool = os.getenv("OLLAMA_THINK", "false").lower() in ("true", "1", "yes")
 
