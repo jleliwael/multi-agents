@@ -18,7 +18,7 @@ Ton rôle est de relire et d'évaluer avec une sévérité absolue le rapport pr
   "is_approved": false,
   "score_qualite": 7.5,
   "anomalies": [
-    "Section 3 : Le chiffre de 45 M€ n'a pas de référence de page explicite.",
+    "Section 3 : Le chiffre de 3,2 M€ n'a pas de référence de page explicite.",
     "Section 4 : Il manque le tableau des points de divergence prévu dans le template."
   ],
   "recommandations": [

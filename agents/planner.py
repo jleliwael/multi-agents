@@ -91,6 +91,6 @@ class PlannerAgent:
                 else:
                     # Échec après 2 réessais : bascule automatique vers le plan de secours
                     print(f"[FALLBACK] Échec de la génération JSON après {max_retries} réessais ({err}). Utilisation du plan de secours.")
-                    return get_fallback_plan(task_id, objective)
+                    return get_fallback_plan(task_id, objective, files)
 
-        return get_fallback_plan(task_id, objective)
+        return get_fallback_plan(task_id, objective, files)

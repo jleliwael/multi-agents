@@ -1,24 +1,28 @@
-# Client HTTP asynchrone pour Ollama
-httpx==0.28.1
+# Versions testées avec Python 3.13 sous Windows 11
 
-# Configuration et validation de schémas
+# Client HTTP et configuration
+httpx==0.28.1
 python-dotenv==1.0.1
 pydantic==2.10.4
+PyYAML==6.0.3
 
-# API Backend et Serveur
+# API et interface web
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
-
-# Base vectorielle locale
-chromadb==0.6.3
-
-# Interface graphique utilisateur
+python-multipart==0.0.34
 streamlit==1.42.0
 
-# Traitement documentaire (PDF, Word, Excel)
+# Mémoire long terme (1.x : roues précompilées pour Python 3.13, pas besoin de Visual Studio)
+chromadb==1.5.9
+
+# Lecture de documents (PDF, Word, Excel) et de pages web
 pymupdf==1.25.3
 python-docx==1.1.2
 openpyxl==3.1.5
-
-# Extraction et nettoyage de pages web
 trafilatura==2.0.0
+
+# Option Claude pour le planificateur et le critique (Phase 9)
+anthropic==2.10.0
+
+# Tests
+pytest==9.2.0

@@ -83,8 +83,14 @@ class Agent:
             if not response.has_tool_calls():
                 return response.content
 
-            # Ajout du message de l'assistant (avec ses tool_calls) à l'historique
-            messages.append(response.message)
+            # Ajout du message de l'assistant (avec ses tool_calls) à l'historique.
+            # Appel écrit en texte : on ne garde que l'appel lui-même, jamais les
+            # « résultats » que le modèle aurait inventés à la suite.
+            if getattr(response, "tool_calls_from_text", False):
+                messages.append({"role": "assistant", "content": json.dumps(
+                    [c["function"] for c in response.tool_calls], ensure_ascii=False)})
+            else:
+                messages.append(response.message)
 
             # Exécution de chaque appel d'outil demandé
             for call in response.tool_calls:

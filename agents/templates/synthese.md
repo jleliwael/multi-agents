@@ -34,10 +34,4 @@
 ## 4. Limites et Points de Vigilance
 {{limites_et_vigilance}}
 
----
-
-## 5. Sources et Références Vérifiées
-| # | Document / Source | Section / Page | Extrait Clé | Niveau de Confiance |
-| :- | :--- | :--- | :--- | :- |
-| 1 | `{{source_nom_1}}` | {{source_page_1}} | « {{source_extrait_1}} » | {{confiance_1}} |
-| 2 | `{{source_nom_2}}` | {{source_page_2}} | « {{source_extrait_2}} » | {{confiance_2}} |
+<!-- La table « Sources et Références » vérifiée est ajoutée automatiquement à la fin du rapport : ne pas en écrire. -->

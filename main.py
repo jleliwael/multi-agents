@@ -11,100 +11,18 @@ import argparse
 import sys
 from pathlib import Path
 from typing import List, Optional
-import json
-import urllib.request
 
 from config import settings
 from orchestrator.orchestrator import Orchestrator
 from agents.planner import PlannerAgent
-from agents.base import Agent
+from agents.registry import make_agent_factory
+from llm.model_resolver import resolve_model
 import tools.documents
 
 
-def get_available_ollama_models() -> List[str]:
-    """Interroge l'API Ollama locale pour obtenir la liste des modèles installés."""
-    try:
-        req = urllib.request.Request(f"{settings.ollama_base_url.rstrip('/')}/api/tags")
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            models = []
-            for m in data.get("models", []):
-                name = m.get("name", "")
-                models.append(name)
-                if ":" in name:
-                    models.append(name.split(":")[0])
-            return models
-    except Exception:
-        return []
-
-
 def resolve_best_model(model_override: Optional[str] = None) -> str:
-    """Détermine le meilleur modèle disponible dans Ollama."""
-    available = get_available_ollama_models()
-    if model_override and (model_override in available or not available):
-        return model_override
-
-    # Priorité aux modèles configurés dans le .env
-    for target in [settings.model_planner, "qwen3:14b", "qwen2.5:14b", "qwen2.5:7b", "mistral", "mistral:latest"]:
-        if target in available:
-            return target
-
-    return available[0] if available else settings.model_planner
-
-
-def build_custom_agent_factory(target_model: str):
-    """Génère une fabrique d'agents configurée avec le modèle sélectionné."""
-    def factory(agent_name: str) -> Agent:
-        name_clean = agent_name.lower().strip()
-        if name_clean == "reader":
-            return Agent(
-                name="reader",
-                role="Lecteur de Documents et Mémoire",
-                model=target_model,
-                tools=["read_document_pages", "read_file", "list_files"]
-            )
-        elif name_clean == "researcher":
-            return Agent(
-                name="researcher",
-                role="Chercheur Web Documentaire",
-                model=target_model,
-                tools=["get_current_datetime"]
-            )
-        elif name_clean == "analyst":
-            return Agent(
-                name="analyst",
-                role="Analyste et Comparateur",
-                model=target_model,
-                tools=["calculator"]
-            )
-        elif name_clean == "coder":
-            return Agent(
-                name="coder",
-                role="Codeur Python Sandbox",
-                model=target_model,
-                tools=["calculator"]
-            )
-        elif name_clean == "writer":
-            return Agent(
-                name="writer",
-                role="Rédacteur de Rapports Markdown",
-                model=target_model,
-                tools=["write_file"]
-            )
-        elif name_clean == "critic":
-            return Agent(
-                name="critic",
-                role="Critique et Assurance Qualité",
-                model=target_model,
-                tools=[]
-            )
-        return Agent(
-            name=name_clean,
-            role=f"Agent {agent_name}",
-            model=target_model,
-            tools=["read_document_pages", "calculator"]
-        )
-    return factory
+    """Modèle demandé (--model) ou modèle du .env, avec bascule s'il n'est pas installé."""
+    return resolve_model(model_override or settings.model_planner)
 
 
 def main() -> None:
@@ -138,7 +56,7 @@ def main() -> None:
     args = parser.parse_args()
 
     active_model = resolve_best_model(args.model)
-    agent_factory = build_custom_agent_factory(active_model)
+    agent_factory = make_agent_factory(model=args.model)
 
     print("=" * 70)
     print("           SYSTÈME MULTI-AGENTS IA LOCAL (WINDOWS 11 / OLLAMA)           ")

@@ -5,6 +5,8 @@ la boucle d'assurance qualité avec le Critique, et la persistance SQLite.
 """
 
 from typing import List, Dict, Any, Optional, Callable
+import contextvars
+import threading
 import time
 import uuid
 from datetime import datetime, timezone
@@ -23,89 +25,36 @@ from agents.writer import WriterAgent
 from storage.repository import task_repository, TaskRepository
 from storage.models import TaskRecord
 from agents.base import Agent
-
-# Import des outils pour enregistrement dans le registre
-import tools.calculator
-import tools.files
-import tools.datetime_tool
-import tools.documents
-import tools.citations
+from agents.registry import make_agent_factory
+from orchestrator.fallback import forced_family, get_fallback_plan
+from llm.model_resolver import resolve_model
+from concurrent.futures import ThreadPoolExecutor
 
 
 def get_active_model() -> str:
-    """Détecte si le modèle configuré est disponible dans Ollama, sinon bascule sur le modèle présent."""
-    try:
-        import urllib.request
-        req = urllib.request.Request(f"{settings.ollama_base_url.rstrip('/')}/api/tags")
-        with urllib.request.urlopen(req, timeout=2) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            installed = [m["name"].split(":")[0] for m in data.get("models", [])] + [m["name"] for m in data.get("models", [])]
-            if settings.model_planner in installed:
-                return settings.model_planner
-            for candidate in ["qwen3:14b", "qwen2.5:14b", "qwen2.5:7b", "mistral", "mistral:latest"]:
-                if candidate in installed:
-                    return candidate
-            if installed:
-                return installed[0]
-    except Exception:
-        pass
-    return settings.model_planner
+    """Modèle du planificateur réellement disponible (bascule si qwen3:14b est absent)."""
+    return resolve_model(settings.model_planner)
 
 
 def default_agent_factory(agent_name: str) -> Agent:
-    """Fabrique par défaut créant un agent spécialiste avec ses outils autorisés."""
-    name_clean = agent_name.lower().strip()
-    target_model = get_active_model()
+    """Fabrique par défaut : outils et modèle définis dans agents/registry.py."""
+    return make_agent_factory()(agent_name)
 
-    if name_clean == "reader":
-        return Agent(
-            name="reader",
-            role="Lecteur de Documents et Mémoire",
-            model=target_model,
-            tools=["read_document_pages", "read_file", "list_files"]
-        )
-    elif name_clean == "researcher":
-        return Agent(
-            name="researcher",
-            role="Chercheur Web Documentaire",
-            model=target_model,
-            tools=["get_current_datetime"]
-        )
-    elif name_clean == "analyst":
-        return Agent(
-            name="analyst",
-            role="Analyste et Comparateur",
-            model=target_model,
-            tools=["calculator"]
-        )
-    elif name_clean == "coder":
-        return Agent(
-            name="coder",
-            role="Codeur Python Sandbox",
-            model=target_model,
-            tools=["calculator"]
-        )
-    elif name_clean == "writer":
-        return Agent(
-            name="writer",
-            role="Rédacteur de Rapports Markdown",
-            model=target_model,
-            tools=["write_file"]
-        )
-    elif name_clean == "critic":
-        return Agent(
-            name="critic",
-            role="Critique et Assurance Qualité",
-            model=target_model,
-            tools=[]
-        )
-    else:
-        return Agent(
-            name=name_clean,
-            role=f"Agent {agent_name}",
-            model=target_model,
-            tools=["read_document_pages", "calculator"]
-        )
+
+def group_steps_in_waves(steps: List[Step]) -> List[List[Step]]:
+    """Regroupe les étapes par « vague » : une vague ne contient que des étapes
+    dont toutes les dépendances sont dans les vagues précédentes.
+    Les étapes d'une même vague sont indépendantes et peuvent tourner en parallèle.
+    L'ordre topologique est conservé (tri préalable)."""
+    ordered = topological_sort_steps(steps)
+    level: Dict[int, int] = {}
+    for step in ordered:
+        deps = [level[d] for d in step.depends_on if d in level]
+        level[step.id] = (max(deps) + 1) if deps else 0
+    waves: Dict[int, List[Step]] = {}
+    for step in ordered:
+        waves.setdefault(level[step.id], []).append(step)
+    return [waves[k] for k in sorted(waves)]
 
 
 class Orchestrator:
@@ -120,12 +69,15 @@ class Orchestrator:
         agent_factory: Optional[Callable[[str], Any]] = None
     ):
         active_m = get_active_model()
-        self.planner = planner or PlannerAgent(model=active_m)
-        self.critic = critic or CriticAgent(model=active_m)
+        # Planificateur et Critique : Claude si ANTHROPIC_API_KEY est renseignée, sinon Ollama
+        from llm.claude_llm import make_reasoning_llm
+        self.planner = planner or PlannerAgent(model=active_m, llm_client=make_reasoning_llm())
+        self.critic = critic or CriticAgent(model=active_m, llm_client=make_reasoning_llm())
         self.writer = writer or WriterAgent(model=active_m)
         self.repository = repository or task_repository
         self.agent_factory = agent_factory or default_agent_factory
         self.runner = PlanRunner(agent_factory=self.agent_factory)
+        self._memory_lock = threading.Lock()
 
     def run(
         self,
@@ -150,6 +102,7 @@ class Orchestrator:
 
         # 1. Initialisation de la mémoire court terme
         memory = ShortTermMemory(task_id=tid, objective=objective)
+        memory.files = list(files or [])  # transmis à chaque agent dans son contexte
 
         journal.log_event(
             task_id=tid,
@@ -162,7 +115,14 @@ class Orchestrator:
         # 2. Planification
         notify("Étape 1 : Élaboration du plan d'action par le Planificateur...")
         plan_start = time.time()
-        plan: Plan = self.planner.generate_plan(task_id=tid, objective=objective, files=files)
+        family = forced_family(objective)
+        if family == "question" and files:
+            # Question sur des documents : plan direct Lecteur -> Rédacteur (rapide et fiable)
+            plan = get_fallback_plan(tid, objective, files, family="question")
+        else:
+            plan = self.planner.generate_plan(task_id=tid, objective=objective, files=files)
+            if family:
+                plan.task_type = family  # le type choisi dans l'interface prime
         plan_duration_ms = (time.time() - plan_start) * 1000
 
         notify(f"Plan généré : Famille '{plan.task_type}' avec {len(plan.steps)} étapes.")
@@ -174,19 +134,19 @@ class Orchestrator:
             result={"task_type": plan.task_type, "steps_count": len(plan.steps)}
         )
 
-        # 3. Exécution ordonnée des étapes
-        ordered_steps = topological_sort_steps(plan.steps)
-        total_steps = len(ordered_steps)
+        # 3. Exécution des étapes, vague par vague (les étapes indépendantes
+        #    d'une même vague tournent en parallèle, dans la limite de MAX_PARALLEL_STEPS)
+        waves = group_steps_in_waves(plan.steps)
+        total_steps = len(plan.steps)
         report_path_str = ""
         final_output_text = ""
+        steps_done = 0
 
-        for idx, step in enumerate(ordered_steps, start=1):
-            notify(f"Étape {idx}/{total_steps} : Exécution par l'agent '{step.agent.upper()}'...")
-
-            # Vérification des limites avant chaque étape
-            limits.steps_done = idx - 1
+        for wave in waves:
+            # Vérification des limites avant chaque vague
+            limits.steps_done = steps_done
             try:
-                limits.check(action=f"etape_{step.id}_{step.agent}")
+                limits.check(action=f"vague_{'_'.join(str(s.id) for s in wave)}")
             except LimitExceeded as exc:
                 notify(f"⚠️ Limite atteinte : {exc.reason} — Génération du rapport partiel...")
                 return self._generate_partial_result(
@@ -199,8 +159,34 @@ class Orchestrator:
                     created_at=created_at
                 )
 
-            # Traitement spécifique de l'étape de rédaction avec le Critic et révisions
-            if step.agent.lower().strip() == "writer":
+            standard = [s for s in wave if s.agent.lower().strip() != "writer"]
+            writers = [s for s in wave if s.agent.lower().strip() == "writer"]
+
+            for offset, step in enumerate(standard, start=1):
+                notify(f"Étape {steps_done + offset}/{total_steps} : Exécution par l'agent '{step.agent.upper()}'...")
+            workers = min(max(1, settings.max_parallel_steps), len(standard))
+            if workers > 1:
+                notify(f"{len(standard)} étapes indépendantes lancées en parallèle ({workers} à la fois).")
+                parent_ctx = contextvars.copy_context()
+                with ThreadPoolExecutor(max_workers=workers) as pool:
+                    # Chaque fil reçoit une copie du contexte de la tâche (ex. id pour les approbations)
+                    list(pool.map(
+                        lambda s: parent_ctx.copy().run(
+                            self._execute_standard_step, step=s, plan=plan, memory=memory, notify=notify
+                        ),
+                        standard,
+                    ))
+            else:
+                for step in standard:
+                    self._execute_standard_step(step=step, plan=plan, memory=memory, notify=notify)
+            steps_done += len(standard)
+
+            # Étape de rédaction : boucle Rédacteur ↔ Critique
+            if writers:
+                self._ensure_document_facts(memory, notify)
+            for step in writers:
+                steps_done += 1
+                notify(f"Étape {steps_done}/{total_steps} : Exécution par l'agent 'WRITER'...")
                 final_output_text, report_file = self._execute_writer_with_critic(
                     step=step,
                     plan=plan,
@@ -208,11 +194,10 @@ class Orchestrator:
                     notify=notify
                 )
                 report_path_str = str(report_file)
-            else:
-                self._execute_standard_step(step=step, plan=plan, memory=memory, notify=notify)
 
         # Si aucun agent writer n'a été planifié, on génère quand même le rapport canonique
         if not report_path_str:
+            self._ensure_document_facts(memory, notify)
             notify("Génération du rapport d'archivage final...")
             final_output_text, report_file = self.writer.write_report(
                 task_id=tid,
@@ -274,9 +259,17 @@ class Orchestrator:
     ) -> None:
         """Exécute une étape normale d'extraction, d'analyse ou de code."""
         context = memory.get_context_for_step(step.depends_on)
+        if getattr(memory, "files", None):
+            context = {**(context or {}), "fichiers_fournis": memory.files}
         start_time = time.time()
-        agent = self.agent_factory(step.agent)
-        output_text = agent.run(step.instruction, context=context)
+        error_msg: Optional[str] = None
+        try:
+            agent = self.agent_factory(step.agent)
+            output_text = agent.run(step.instruction, context=context)
+        except Exception as exc:  # une étape en échec ne fait pas tomber toute la tâche
+            error_msg = f"{type(exc).__name__} : {exc}"
+            output_text = f"Étape {step.id} non réalisée ({error_msg})."
+            notify(f"⚠️ L'étape {step.id} ({step.agent}) a échoué : {error_msg}. La tâche continue.")
         duration_ms = (time.time() - start_time) * 1000
 
         extracted_facts = self.runner._extract_facts_from_output(output_text)
@@ -284,18 +277,21 @@ class Orchestrator:
         step_result = StepResult(
             step_id=step.id,
             agent=step.agent,
-            success=True,
+            success=error_msg is None,
             output_text=output_text,
-            facts=extracted_facts
+            facts=extracted_facts,
+            error=error_msg,
         )
-        memory.add_step_result(step_result)
+        with self._memory_lock:
+            memory.add_step_result(step_result)
 
         journal.log_event(
             task_id=plan.task_id,
             agent=step.agent,
             action=f"execute_step_{step.id}",
             duration_ms=duration_ms,
-            result={"facts_found": len(extracted_facts)}
+            result={"facts_found": len(extracted_facts), "success": error_msg is None},
+            error=error_msg,
         )
 
     def _execute_writer_with_critic(
@@ -321,6 +317,7 @@ class Orchestrator:
                 objective=plan.objective,
                 task_type=plan.task_type or "synthese",
                 facts=memory.get_facts(),
+                previous_outputs=self._previous_outputs(memory),
                 feedback=feedback
             )
 
@@ -329,7 +326,8 @@ class Orchestrator:
             critique: CriticEvaluation = self.critic.evaluate(
                 instruction=step.instruction,
                 output_text=current_report,
-                available_facts=memory.get_facts()
+                available_facts=memory.get_facts(),
+                reference_text=plan.objective + "\n" + "\n".join(self._previous_outputs(memory).values()),
             )
 
             journal.log_event(
@@ -344,11 +342,28 @@ class Orchestrator:
                 }
             )
 
-            if critique.ok or revision >= max_revisions:
-                if not critique.ok:
-                    notify(f"Note qualité : {critique.score}/10 (Limite de révisions atteinte, rapport finalisé).")
-                else:
+            # Remarques seulement « d'avis » (pas de contrôle automatique en échec) :
+            # une seule révision suffit, inutile de boucler sur l'opinion du modèle.
+            avis_seulement = not critique.ok and not critique.bloquant and revision >= 1
+            if critique.ok or revision >= max_revisions or avis_seulement:
+                if critique.ok:
                     notify(f"Approbation du Critique validée avec succès (Score : {critique.score}/10).")
+                elif critique.bloquant:
+                    notify(f"Note qualité : {critique.score}/10 (contrôles automatiques en échec, rapport finalisé avec avertissement).")
+                    # Honnêteté : le lecteur doit voir que le rapport n'a pas passé le contrôle
+                    current_report = (
+                        "> ⚠️ **Rapport non validé par le Critique** — à vérifier avant usage :\n"
+                        + "\n".join(f"> - {p}" for p in critique.problemes[:5]) + "\n\n"
+                        + current_report
+                    )
+                else:
+                    notify(f"Contrôles automatiques réussis ; remarques du Critique ajoutées en fin de rapport (score {critique.score}/10).")
+                    current_report += (
+                        "\n\n> ℹ️ **Remarques du Critique (non bloquantes)** :\n"
+                        + "\n".join(f"> - {p}" for p in critique.problemes[:5]) + "\n"
+                    )
+                if report_file and not critique.ok:
+                    Path(report_file).write_text(current_report, encoding="utf-8")
                 break
 
             # Préparation du feedback pour la prochaine révision
@@ -366,6 +381,59 @@ class Orchestrator:
         memory.add_step_result(step_result)
 
         return current_report, report_file
+
+    def _ensure_document_facts(self, memory: ShortTermMemory, notify: Callable[[str], None],
+                               max_chunks_per_file: int = 8) -> None:
+        """Garantit que le Rédacteur dispose de faits issus des fichiers fournis.
+
+        Si les agents n'ont produit aucun fait sourcé pour un fichier (modèle qui n'a pas
+        appelé l'outil, JSON invalide...), on extrait directement ses pages : le rapport
+        s'appuie alors sur le texte réel des documents au lieu d'être inventé.
+        """
+        files = getattr(memory, "files", None) or []
+        if not files:
+            return
+        from tools.documents import extract_document
+        from orchestrator.plan_models import ConfidenceLevel, SourceType
+
+        cited = {Path(f.source_name).name.lower() for f in memory.get_facts()}
+        added = 0
+        for file_path in files:
+            name = Path(file_path).name
+            if name.lower() in cited:
+                continue
+            try:
+                chunks = extract_document(file_path)[:max_chunks_per_file]
+            except Exception as exc:
+                notify(f"⚠️ Lecture directe impossible de {name} : {exc}")
+                continue
+            for chunk in chunks:
+                text = " ".join(chunk.content.split())
+                if not text:
+                    continue
+                memory.add_fact(Fact(
+                    assertion=text[:700],
+                    source_type=SourceType.DOCUMENT,
+                    source_name=name,
+                    page_or_section=f"Page {chunk.page_number}",
+                    exact_quote=text[:200],
+                    confidence=ConfidenceLevel.MEDIUM,
+                ))
+                added += 1
+        if added:
+            notify(f"Extraction directe de {added} passage(s) des documents fournis pour sourcer le rapport.")
+
+    @staticmethod
+    def _previous_outputs(memory: ShortTermMemory, max_chars: int = 3000) -> Dict[str, str]:
+        """Textes produits par les étapes précédentes (analyses, calculs...) pour le Rédacteur.
+        Les sorties purement JSON (faits) sont déjà transmises via la liste des faits."""
+        outputs: Dict[str, str] = {}
+        for step_id, res in sorted(memory.get_all_step_results().items()):
+            text = (res.output_text or "").strip()
+            if not text or res.agent.lower() == "writer" or text.startswith("{\"facts\""):
+                continue
+            outputs[f"etape_{step_id}_{res.agent}"] = text[:max_chars]
+        return outputs
 
     def _generate_partial_result(
         self,
@@ -393,7 +461,7 @@ class Orchestrator:
         if facts:
             partial_body += "## Faits collectés avant l'arrêt\n\n"
             for i, f in enumerate(facts, 1):
-                partial_body += f"- [{i}] {f.claim} *(Source : {f.source_name})*\n"
+                partial_body += f"- [{i}] {f.assertion} *(Source : {f.source_name})*\n"
         else:
             partial_body += "Aucun fait n'avait encore été collecté au moment de l'arrêt.\n"
 

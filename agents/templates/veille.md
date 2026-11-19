@@ -28,10 +28,4 @@
 ## 4. Signaux Faibles et Perspectives
 {{signaux_faibles_et_opportunites}}
 
----
-
-## 5. Bibliographie et Sources de Veille Annotées
-| Date | Source / Média | Titre / URL | Fait Majeur Relevé | Confiance |
-| :--- | :--- | :--- | :--- | :- |
-| {{date_source_1}} | {{media_1}} | [{{titre_1}}]({{url_1}}) | {{fait_1}} | {{confiance_1}} |
-| {{date_source_2}} | {{media_2}} | [{{titre_2}}]({{url_2}}) | {{fait_2}} | {{confiance_2}} |
+<!-- La table « Sources et Références » vérifiée est ajoutée automatiquement à la fin du rapport : ne pas en écrire. -->

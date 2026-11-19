@@ -40,6 +40,21 @@ class Settings:
     max_tokens: int = int(os.getenv("MAX_TOKENS", "50000"))
     max_seconds: int = int(os.getenv("MAX_SECONDS", "600"))
 
+    # Taille du contexte Ollama en tokens (Ollama utilise 4096 par défaut : trop court pour
+    # le Rédacteur qui reçoit gabarit + faits + analyses). 8192 tient dans 6 Go de VRAM.
+    num_ctx: int = int(os.getenv("NUM_CTX", "8192"))
+    # Longueur maximale d'une réponse : évite qu'un modèle « s'emballe » pendant des minutes
+    max_output_tokens: int = int(os.getenv("MAX_OUTPUT_TOKENS", "2048"))
+    # Mode « réflexion » de qwen3 (plus lent ; désactivé par défaut)
+    ollama_think: bool = os.getenv("OLLAMA_THINK", "false").lower() in ("true", "1", "yes")
+
+    # Étapes indépendantes exécutées en parallèle (1 = séquentiel ; 2 conseillé avec 6 Go de VRAM)
+    max_parallel_steps: int = int(os.getenv("MAX_PARALLEL_STEPS", "2"))
+
+    # Option Claude (Phase 9) : utilisé pour le planificateur et le critique si une clé est fournie
+    anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
+    claude_model: str = os.getenv("CLAUDE_MODEL", "claude-opus-5-5")
+
     # Recherche Web externe (SearXNG local ou API optionnelle)
     searxng_url: str = os.getenv("SEARXNG_URL", "http://localhost:8080")
     tavily_api_key: str = os.getenv("TAVILY_API_KEY", "")

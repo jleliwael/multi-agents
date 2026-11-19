@@ -9,11 +9,43 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime, timezone
 import json
+import re
 
 from config import settings
 from orchestrator.plan_models import Fact
 from llm.ollama_llm import OllamaLLM
 from tools.citations import CitationsManager
+
+
+# Morceaux du prompt que certains modèles recopient à la fin de leur réponse
+_ECHO_MARKERS = (
+    "FAITS CERTIFIÉS DISPONIBLES", "ANALYSES PRÉCÉDENTES", "GABARIT DE STRUCTURE REQUIS",
+    "[CONSIGNES DE RÉVISION", "Rédige le corps complet du rapport",
+)
+# Titre qui COMMENCE par Sources / Bibliographie / Références (ex. « ## 5. Sources et preuves »),
+# mais pas « ## Analyse des sources de revenus »
+_SOURCES_HEADING = re.compile(
+    r"(?im)^#{1,6}\s*(?:\d+(?:\.\d+)*[.)]?\s*)?(?:sources|bibliographie|références|references)\b.*$"
+)
+
+
+def clean_report_body(body: str) -> str:
+    """Retire du texte du modèle : le prompt recopié, ses balises de code et sa propre
+    section « Sources » (souvent inventée) ; la table vérifiée est ajoutée ensuite."""
+    text = body.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:markdown|md)?\s*", "", text)
+        text = re.sub(r"\s*```$", "", text)
+    for marker in _ECHO_MARKERS:
+        idx = text.find(marker)
+        if idx > 0:
+            text = text[:idx]
+    match = _SOURCES_HEADING.search(text)
+    if match:
+        text = text[:match.start()]
+    # Lignes de la liste des faits recopiée telle quelle (« [1] ... (Source: x, Page 1 - Citation: ...) »)
+    text = re.sub(r"(?m)^\s*\[\d+\][^\n]*\(Source\s*:[^\n]*Citation\s*:[^\n]*$\n?", "", text)
+    return text.rstrip().rstrip("-").rstrip()
 
 
 class WriterAgent:
@@ -38,6 +70,8 @@ class WriterAgent:
             filename = "veille.md"
         elif "comp" in clean_type:
             filename = "comparatif.md"
+        elif "question" in clean_type:
+            filename = "question.md"
 
         tpl_path = settings.base_dir / "agents" / "templates" / filename
         if tpl_path.exists():
@@ -108,13 +142,8 @@ class WriterAgent:
             for idx, f in indexed_sources.items():
                 body += f"- [{idx}] {f.assertion}\n"
 
-        # Nettoyage et injection de la section sources normalisée
-        if "## Sources et Références" in body:
-            # On remplace par notre table canonique vérifiée
-            parts = body.split("## Sources et Références")
-            full_report = parts[0].strip() + "\n\n" + sources_section
-        else:
-            full_report = body + "\n\n" + sources_section
+        # Nettoyage puis injection de la table des sources vérifiée
+        full_report = clean_report_body(body) + "\n\n" + sources_section
 
         # Enregistrement dans data/reports/<date>_<task_id>.md
         settings.reports_dir.mkdir(parents=True, exist_ok=True)

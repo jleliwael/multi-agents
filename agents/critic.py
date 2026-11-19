@@ -7,8 +7,9 @@
 - Renvoie un objet structuré {ok, problemes, suggestions}.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Set
 import json
+import re
 from pydantic import BaseModel, Field
 
 from config import settings
@@ -23,6 +24,50 @@ class CriticEvaluation(BaseModel):
     problemes: List[str] = Field(default_factory=list, description="Liste des écarts ou anomalies constatés")
     suggestions: List[str] = Field(default_factory=list, description="Actions correctives concrètes pour révision")
     score: float = Field(default=8.0, ge=0.0, le=10.0, description="Note globale de qualité sur 10")
+    bloquant: bool = Field(
+        default=False,
+        description="True si un contrôle automatique a échoué (chiffre non sourcé, renvoi inventé, texte vide) ; "
+                    "les remarques du LLM seules ne sont pas bloquantes",
+    )
+
+
+_NUMBER = re.compile(r"\d(?:[\d   ]*\d)?(?:[.,]\d+)?")
+
+
+def _normalize_number(raw: str) -> str:
+    """« 1 150 000 » -> « 1150000 », « 8,5 » -> « 8.5 », « 45.0 » -> « 45 »."""
+    n = re.sub(r"[\s  ]", "", raw).replace(",", ".")
+    if "." in n:
+        n = n.rstrip("0").rstrip(".")
+    return n
+
+
+def numbers_in(text: str) -> Set[str]:
+    """Ensemble des nombres d'un texte, normalisés."""
+    return {_normalize_number(m.group(0)) for m in _NUMBER.finditer(text or "")}
+
+
+def unsupported_numbers(report: str, reference_text: str) -> List[str]:
+    """Chiffres du rapport absents de toutes les sources (faits, objectif, calculs des agents).
+
+    Ignorés : renvois [n], numérotation des titres, dates, années, petits entiers (< 10).
+    """
+    body = re.split(r"(?im)^#{1,6}\s*(?:\d+[.)]?\s*)?sources", report)[0]
+    body = re.sub(r"\[\d+\]", " ", body)                        # renvois [1]
+    body = re.sub(r"(?m)^(#{1,6}\s*)[\d.]+\s", r"\1", body)     # « ## 3.1 Titre »
+    body = re.sub(r"(?m)^\s*\d+[.)]\s", " ", body)              # listes numérotées
+    body = re.sub(r"\b\d{1,2}/\d{1,2}/\d{2,4}\b", " ", body)    # dates
+    allowed = numbers_in(reference_text)
+    suspects = []
+    for n in sorted(numbers_in(body)):
+        if n in allowed:
+            continue
+        if re.fullmatch(r"(19|20)\d\d", n):                     # années
+            continue
+        if "." not in n and n.isdigit() and int(n) < 10:        # petits entiers
+            continue
+        suspects.append(n)
+    return suspects
 
 
 class CriticAgent:
@@ -43,11 +88,30 @@ class CriticAgent:
         self,
         instruction: str,
         output_text: str,
-        available_facts: List[Fact]
+        available_facts: List[Fact],
+        reference_text: str = ""
     ) -> CriticEvaluation:
-        """Évalue le texte produit face à l'instruction et aux faits disponibles."""
+        """Évalue le texte produit face à l'instruction et aux faits disponibles.
+
+        reference_text : objectif + résultats des étapes précédentes (calculs, analyses) ;
+        les chiffres qui y figurent sont considérés comme sourcés.
+        """
         problemes: List[str] = []
         suggestions: List[str] = []
+
+        # 0. Contrôle déterministe des chiffres : tout nombre doit venir d'une source
+        sources_text = reference_text + "\n" + "\n".join(
+            f"{f.assertion}\n{f.exact_quote}" for f in available_facts
+        )
+        suspects = unsupported_numbers(output_text or "", sources_text)
+        if suspects:
+            problemes.append(
+                "Chiffres absents de toutes les sources (risque d'invention) : " + ", ".join(suspects[:10]) + "."
+            )
+            suggestions.append(
+                "Supprimer ces chiffres ou les remplacer par ceux des faits certifiés ; "
+                "si l'information n'existe pas dans les sources, l'écrire clairement."
+            )
 
         # 1. Contrôle déterministe des citations
         if available_facts:
@@ -114,7 +178,8 @@ class CriticAgent:
                 ok=is_ok,
                 problemes=all_problemes,
                 suggestions=all_suggestions,
-                score=min(llm_eval.score, 5.0) if not is_ok else llm_eval.score
+                score=min(llm_eval.score, 5.0) if not is_ok else llm_eval.score,
+                bloquant=len(problemes) > 0,
             )
 
         except Exception:
@@ -124,5 +189,6 @@ class CriticAgent:
                 ok=is_ok,
                 problemes=problemes,
                 suggestions=suggestions,
-                score=9.0 if is_ok else 4.0
+                score=9.0 if is_ok else 4.0,
+                bloquant=len(problemes) > 0,
             )

@@ -46,10 +46,4 @@
 ## 4. Recommandation Motivée et Plan d'Action
 {{recommandation_motivee}}
 
----
-
-## 5. Sources Documentaires et Preuves Vérifiées
-| Option | Document / URL Source | Page / Référence | Preuve / Extrait |
-| :--- | :--- | :--- | :--- |
-| {{nom_option_a}} | `{{source_a}}` | {{ref_a}} | « {{extrait_a}} » |
-| {{nom_option_b}} | `{{source_b}}` | {{ref_b}} | « {{extrait_b}} » |
+<!-- La table « Sources et Références » vérifiée est ajoutée automatiquement à la fin du rapport : ne pas en écrire. -->

@@ -25,41 +25,63 @@ class OllamaResponse:
     def __init__(self, message: Dict[str, Any], raw_data: Dict[str, Any]):
         self.message = message
         self.raw_data = raw_data
-        self.content: str = (message.get("content", "") or "").strip()
+        # Retire un éventuel raisonnement <think>...</think> laissé dans la réponse
+        raw_content = message.get("content", "") or ""
+        self.content: str = re.sub(r"<think>.*?</think>", "", raw_content, flags=re.S).strip()
         self.tool_calls: List[Dict[str, Any]] = message.get("tool_calls", []) or []
         self.eval_count: int = raw_data.get("eval_count", 0)
         self.prompt_eval_count: int = raw_data.get("prompt_eval_count", 0)
         self.total_duration_sec: float = raw_data.get("total_duration", 0) / 1e9
 
         # Détection de secours si le modèle écrit l'appel d'outil directement en texte JSON
+        self.tool_calls_from_text: bool = False
         if not self.tool_calls and self.content:
             self._try_parse_text_tool_calls()
 
     def _try_parse_text_tool_calls(self) -> None:
-        """Détecte les appels d'outils formulés sous forme de texte brut JSON."""
-        # Recherche d'un bloc JSON de type [{"name": ..., "arguments": ...}] ou {"name": ..., "arguments": ...}
-        text = self.content.strip()
-        if (text.startswith("[") and text.endswith("]")) or (text.startswith("{") and text.endswith("}")):
+        """Détecte les appels d'outils écrits en texte JSON au lieu du format natif.
+
+        Certains modèles (ex. mistral) répondent par exemple :
+            ```json
+            [{"name": "read_document_pages", "arguments": {"filepath": "a.pdf"}}]
+            ```
+        On accepte : blocs de code, texte autour, objet seul ou liste,
+        clés "arguments" / "parameters", forme {"function": {...}}, arguments en chaîne JSON.
+        Un JSON de faits ({"facts": [...]}) n'est jamais pris pour un appel d'outil.
+        """
+        text = re.sub(r"```(?:json)?", "", self.content).strip()
+        # On ne lit que la PREMIÈRE valeur JSON : certains modèles enchaînent ensuite de
+        # faux « résultats d'outil » inventés, qu'il ne faut surtout pas croire.
+        decoder = json.JSONDecoder()
+        candidates = []
+        starts = [i for i in (text.find("["), text.find("{")) if i >= 0]
+        for start in sorted(starts)[:1]:
             try:
-                parsed = json.loads(text)
-                if isinstance(parsed, list):
-                    for item in parsed:
-                        if isinstance(item, dict) and "name" in item:
-                            self.tool_calls.append({
-                                "function": {
-                                    "name": item["name"],
-                                    "arguments": item.get("arguments", {})
-                                }
-                            })
-                elif isinstance(parsed, dict) and "name" in parsed:
-                    self.tool_calls.append({
-                        "function": {
-                            "name": parsed["name"],
-                            "arguments": parsed.get("arguments", {})
-                        }
-                    })
+                candidates.append(decoder.raw_decode(text, start)[0])
             except Exception:
                 pass
+        for parsed in candidates:
+            items = parsed if isinstance(parsed, list) else [parsed]
+            calls = []
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                if isinstance(item.get("function"), dict):
+                    item = item["function"]
+                name = item.get("name")
+                if not isinstance(name, str) or not name:
+                    continue
+                args = item.get("arguments", item.get("parameters", {}))
+                if isinstance(args, str):
+                    try:
+                        args = json.loads(args)
+                    except Exception:
+                        args = {}
+                calls.append({"function": {"name": name, "arguments": args if isinstance(args, dict) else {}}})
+            if calls:
+                self.tool_calls.extend(calls)
+                self.tool_calls_from_text = True
+                return
 
     def has_tool_calls(self) -> bool:
         """Indique si le modèle a demandé un ou plusieurs appels d'outils."""
@@ -91,8 +113,13 @@ class OllamaLLM:
             "stream": False,
             "options": {
                 "temperature": temperature,
+                "num_ctx": settings.num_ctx,
+                "num_predict": settings.max_output_tokens,
             }
         }
+        # Le paramètre « think » n'est accepté que par les modèles qui raisonnent (qwen3...)
+        if self.model.lower().startswith("qwen3"):
+            payload["think"] = settings.ollama_think
 
         if tools:
             payload["tools"] = tools
