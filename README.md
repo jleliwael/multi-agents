@@ -63,14 +63,17 @@ python main.py "Fais une synthèse de ce document" --files mon_document.pdf
 # Indexer vos documents dans la mémoire long terme
 python scripts/index_docs.py
 
-# Interface web
+# Interface web (API + interface, ouvre le navigateur)
 .\start.ps1
+
+# Évaluation chiffrée
+python scripts/evaluate.py
 ```
 
 ## Structure du projet
 
 ```
-agents/        agents, leurs prompts et les modèles de rapport
+agents/        registre des agents, prompts, gabarits de rapport, agents YAML (definitions/)
 orchestrator/  plan, ordre des étapes, limites, plan de secours
 llm/           connexion à Ollama (et à Claude en option)
 tools/         calculatrice, fichiers, documents, web, mémoire, code
@@ -79,7 +82,7 @@ storage/       historique SQLite
 security/      dossiers autorisés, validations, anti-injection
 logging_/      journal JSONL de chaque appel
 api/  ui/      API FastAPI et interface Streamlit
-scripts/       vérification, indexation, évaluation
+scripts/       vérification, indexation, évaluation, avis, veille programmée
 tests/         tests pytest et jeu d'évaluation
 docs/          cahier des charges, architecture, guides
 ```
@@ -91,10 +94,10 @@ docs/          cahier des charges, architecture, guides
 | 0 à 3 — Installation, besoin, architecture, choix techniques | ✅ |
 | 4 — Prototype (agents, orchestrateur, critique, rapport) | ✅ |
 | 5 — Outils réels (web, documents, mémoire, code) | ✅ |
-| 6 — Fiabilité et sécurité | 🚧 en cours |
-| 7 — Évaluation chiffrée | ⏳ |
-| 8 — Version 1.0 (API + interface web) | ⏳ |
-| 9 — Amélioration continue | ⏳ |
+| 6 — Fiabilité et sécurité (limites, anti-injection, contrôle des chiffres) | ✅ |
+| 7 — Évaluation chiffrée (30 tâches, `scripts/evaluate.py`) | ✅ outil prêt — mesure complète à faire avec Qwen |
+| 8 — Version 1.0 (API FastAPI + interface Streamlit, `start.ps1`) | ✅ |
+| 9 — Amélioration continue (parallélisme, avis 👍/👎, agents YAML, veille programmée, option Claude) | ✅ |
 
 ## Documentation
 
