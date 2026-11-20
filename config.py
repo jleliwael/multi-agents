@@ -38,7 +38,7 @@ class Settings:
     max_web_searches: int = int(os.getenv("MAX_WEB_SEARCHES", "5"))
     max_pages_read: int = int(os.getenv("MAX_PAGES_READ", "30"))
     max_tokens: int = int(os.getenv("MAX_TOKENS", "50000"))
-    max_seconds: int = int(os.getenv("MAX_SECONDS", "600"))
+    max_seconds: int = int(os.getenv("MAX_SECONDS", "1800"))
 
     # Taille du contexte Ollama en tokens (Ollama utilise 4096 par défaut : trop court pour
     # le Rédacteur qui reçoit gabarit + faits + analyses). 8192 tient dans 6 Go de VRAM.
